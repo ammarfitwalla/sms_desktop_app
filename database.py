@@ -5,7 +5,7 @@ def create_connection():
         host="localhost",
         user="root",
         password="admin",
-        database="societysystem"
+        database="societydb"
     )
 
 
