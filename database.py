@@ -152,12 +152,12 @@ def get_house_id_by_house_number(cursor, house_number):
     return get_id_from_table(cursor, "Houses", {"house_number": house_number})
 
 
-def get_cts_id_by_cts_number_and_house_id(cursor, cts_number, house_id):
+def get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id):
     return get_id_from_table(cursor, "CTS", {"cts_number": cts_number, "house_id": house_id})
 
 
-def get_room_id_by_cts_id_and_house_id(cursor, cts_id, house_id):
-    return get_id_from_table(cursor, "Rooms", {"cts_id": cts_id, "house_id": house_id})
+def get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id):
+    return get_id_from_table(cursor, "Rooms", {"room_number": room_number, "cts_id": cts_id, "house_id": house_id})
 
 
 def get_id_from_table(cursor, table_name, conditions):
@@ -199,8 +199,9 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
         if old_house_number == house_number and old_cts_number == cts_number and old_room_number == room_number:
             try:
                 old_house_id = get_house_id_by_house_number(cursor, old_house_number)
-                old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, old_house_id)
-                old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, old_house_id)
+                old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
+                old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number, old_cts_id,
+                                                                         old_house_id)
 
                 tenant_data = {
                     "tenant_name": tenant_name or None,
@@ -214,19 +215,22 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
 
                 connection.commit()
                 connection.close()
+
+                return True, "Data Updated Successfully!"
             except Exception as e:
                 print(e)
 
         if old_house_number != house_number and old_cts_number == cts_number and old_room_number == room_number:
-            result = get_house_id_by_house_number(cursor, house_number)
+            house_id = get_house_id_by_house_number(cursor, house_number)
 
-            if result is None:
+            if house_id is None:
                 new_house_id = insert_into_table(cursor, "Houses", {"house_number": house_number})
                 new_cts_id = insert_into_table(cursor, "CTS", {"cts_number": cts_number, "house_id": new_house_id})
 
                 old_house_id = get_house_id_by_house_number(cursor, old_house_number)
-                old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, old_house_id)
-                old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, old_house_id)
+                old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
+                old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number, old_cts_id,
+                                                                         old_house_id)
 
                 cursor.execute("UPDATE Rooms SET cts_id=%s, house_id=%s WHERE room_id=%s",
                                (new_cts_id, new_house_id, old_room_id))
@@ -243,14 +247,16 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
 
                 connection.commit()
                 connection.close()
-            else:
-                house_id = result[0]
-                cts_id_result = get_cts_id_by_cts_number_and_house_id(cursor, cts_number, house_id)
 
-                if cts_id_result is None:
+                return True, "Data Updated Successfully!"
+            else:
+                cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
+
+                if cts_id is None:
                     new_cts_id = insert_into_table(cursor, "CTS", {"cts_number": cts_number, "house_id": house_id})
-                    old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, house_id)
-                    old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, house_id)
+                    old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, house_id)
+                    old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number, old_cts_id,
+                                                                             house_id)
 
                     cursor.execute("UPDATE Rooms SET cts_id=%s, house_id=%s WHERE room_id=%s",
                                    (new_cts_id, house_id, old_room_id))
@@ -267,15 +273,16 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
 
                     connection.commit()
                     connection.close()
+                    return True, "Data Updated Successfully!"
 
                 else:
-                    cts_id = cts_id_result[0]
-                    cursor.execute("SELECT room_id FROM Rooms WHERE cts_id=%s AND house_id=%s", (cts_id, house_id))
-                    room_id_result = cursor.fetchone()
-                    if not room_id_result:
+                    room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
+                    if room_id is None:
                         old_house_id = get_house_id_by_house_number(cursor, old_house_number)
-                        old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, old_house_id)
-                        old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, old_house_id)
+                        old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
+                        old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number,
+                                                                                 old_cts_id,
+                                                                                 old_house_id)
 
                         cursor.execute("UPDATE Rooms SET cts_id=%s, house_id=%s WHERE room_id=%s",
                                        (cts_id, house_id, old_room_id))
@@ -293,12 +300,44 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                         connection.commit()
                         connection.close()
 
+                        return True, "Data Updated Successfully!"
                     else:
-                        print('error, room number already exists for New house number')
+                        return False, "Room Number already exists!"
 
-    except Exception as e:
+        if old_house_number == house_number and old_cts_number != cts_number and old_room_number == room_number:
+            pass
+
+        if old_house_number == house_number and old_cts_number == cts_number and old_room_number != room_number:
+            old_house_id = get_house_id_by_house_number(cursor, old_house_number)
+            old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
+            room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, old_cts_id, old_house_id)
+            if room_id is None:
+                old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number,
+                                                                         old_cts_id,
+                                                                         old_house_id)
+
+                cursor.execute("UPDATE Rooms SET room_number=%s WHERE room_id=%s", (room_number, old_room_id))
+
+                tenant_data = {
+                    "tenant_name": tenant_name or None,
+                    "tenant_mobile": tenant_mobile or None,
+                    "tenant_dod": tenant_dod,
+                    "tenant_gender": tenant_gender or None,
+                    "notes": notes or None
+                }
+
+                update_tenant_info(cursor, tenant_data, old_room_id)
+
+                connection.commit()
+                connection.close()
+
+                return True, "Data Updated Successfully!"
+            else:
+                return False, "Room Number already exists!"
+
+    except:
         connection.rollback()
-        return f"An error occurred: {e}"
+        return False, "Unable to Update Data!"
     finally:
         cursor.close()
         connection.close()

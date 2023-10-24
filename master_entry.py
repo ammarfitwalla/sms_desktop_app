@@ -129,7 +129,7 @@ class MasterEntry(BaseWindow):
                                                                tenant_mobile, tenant_dod, notes, tenant_gender)
                 print(status, message)
                 if status:
-                    QMessageBox.information(self, "Success", "Data inserted successfully!")
+                    QMessageBox.information(self, "Success", "Data Inserted Successfully!")
                     self.clear_form()
                     self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
                     self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
@@ -137,14 +137,18 @@ class MasterEntry(BaseWindow):
                 else:
                     QMessageBox.warning(self, "Error", str(message))
             else:
-                database.update_master_entry(self.old_house_number, self.old_cts_number, self.old_room_number,
-                                             house_number, cts_number, room_number, tenant_name, tenant_mobile,
-                                             tenant_dod, notes, tenant_gender)
-                QMessageBox.information(self, "Success", "Data Updated successfully!")
-                self.clear_form()
-                self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
-                self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
-                self.refresh_combo_box(self.cts_number_combo, database.get_cts_numbers)
+                status, message = database.update_master_entry(self.old_house_number, self.old_cts_number,
+                                                               self.old_room_number, house_number, cts_number,
+                                                               room_number, tenant_name, tenant_mobile,
+                                                               tenant_dod, notes, tenant_gender)
+                if status:
+                    QMessageBox.information(self, "Success", "Data Updated successfully!")
+                    self.clear_form()
+                    self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
+                    self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
+                    self.refresh_combo_box(self.cts_number_combo, database.get_cts_numbers)
+                else:
+                    QMessageBox.warning(self, "Error", str(message))
 
             self.populate_table()
             self.setWindowTitle("Master Entry - Add")
