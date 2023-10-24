@@ -1,5 +1,6 @@
 import mysql.connector
 
+
 def create_connection():
     return mysql.connector.connect(
         host="localhost",
@@ -32,6 +33,7 @@ def get_house_numbers():
     connection.close()
     return [item[0] for item in results]
 
+
 def get_cts_numbers():
     connection = create_connection()
     cursor = connection.cursor()
@@ -42,61 +44,6 @@ def get_cts_numbers():
 
     connection.close()
     return [item[0] for item in results]
-
-def get_room_numbers():
-    connection = create_connection()
-    cursor = connection.cursor()
-
-    query = "SELECT DISTINCT room_number FROM rooms"
-    cursor.execute(query)
-    results = cursor.fetchall()
-
-    connection.close()
-    return [item[0] for item in results]
-
-
-def insert_master_entry(house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes, tenant_gender):
-    connection = create_connection()
-    cursor = connection.cursor()
-
-    # Step 1: Handle House Number
-    cursor.execute("SELECT house_id FROM Houses WHERE house_number=%s", (house_number,))
-    house = cursor.fetchone()
-
-    if not house:
-        cursor.execute("INSERT INTO Houses (house_number) VALUES (%s)", (house_number,))
-        house_id = cursor.lastrowid
-    else:
-        house_id = house[0]
-
-    # Step 2: Handle CTS Number
-    cursor.execute("SELECT cts_id FROM CTS WHERE cts_number=%s", (cts_number,))
-    cts = cursor.fetchone()
-
-    if not cts:
-        cursor.execute("INSERT INTO CTS (cts_number, house_id) VALUES (%s, %s)", (cts_number, house_id))
-        cts_id = cursor.lastrowid
-    else:
-        cts_id = cts[0]
-
-    # Step 3: Handle Room Number
-    cursor.execute("SELECT room_id FROM Rooms WHERE room_number=%s AND cts_id=%s", (room_number, cts_id))
-    room = cursor.fetchone()
-
-    if not room:
-        cursor.execute("INSERT INTO Rooms (room_number, cts_id, house_id) VALUES (%s, %s, %s)", (room_number, cts_id, house_id))
-        room_id = cursor.lastrowid
-    else:
-        room_id = room[0]
-
-    # Step 4: Insert Tenant Details
-    cursor.execute("""
-        INSERT INTO Tenants (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id))
-
-    connection.commit()
-    connection.close()
 
 
 def get_all_master_entries():
@@ -125,81 +72,263 @@ def get_all_master_entries():
     return results
 
 
-def update_master_entry(old_house_number, old_cts_number, old_room_number, house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes, tenant_gender):
+def get_room_numbers():
     connection = create_connection()
     cursor = connection.cursor()
 
+    query = "SELECT DISTINCT room_number FROM rooms"
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    connection.close()
+    return [item[0] for item in results]
+
+
+def insert_house(cursor, house_number):
+    cursor.execute("SELECT house_id FROM Houses WHERE house_number=%s", (house_number,))
+    house = cursor.fetchone()
+
+    if not house:
+        cursor.execute("INSERT INTO Houses (house_number) VALUES (%s)", (house_number,))
+        return cursor.lastrowid
+    else:
+        return house[0]
+
+
+def insert_cts(cursor, house_id, cts_number):
+    cursor.execute("SELECT cts_id FROM CTS WHERE house_id = %s AND cts_number = %s", (house_id, cts_number))
+    cts = cursor.fetchone()
+
+    if not cts:
+        cursor.execute("INSERT INTO CTS (cts_number, house_id) VALUES (%s, %s)", (cts_number, house_id))
+        return cursor.lastrowid
+    else:
+        return cts[0]
+
+
+def insert_room(cursor, house_id, cts_id, room_number):
+    cursor.execute("SELECT room_id FROM Rooms WHERE room_number=%s AND cts_id=%s AND house_id=%s",
+                   (room_number, cts_id, house_id))
+    room = cursor.fetchone()
+
+    if not room:
+        cursor.execute("INSERT INTO Rooms (room_number, cts_id, house_id) VALUES (%s, %s, %s)",
+                       (room_number, cts_id, house_id))
+        return cursor.lastrowid
+    else:
+        return None
+
+
+def insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id):
+    cursor.execute("""
+        INSERT INTO Tenants (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id))
+
+
+def insert_master_entry(house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes,
+                        tenant_gender):
+    connection = create_connection()
+    cursor = connection.cursor()
     try:
-        # Fetch house_id using old_house_number
-        cursor.execute("SELECT house_id FROM Houses WHERE house_number = %s", (old_house_number,))
-        house_id = cursor.fetchone()[0]
-        print(old_house_number, house_id)
-
-        # Fetch cts_id using old_cts_number and house_id
-        cursor.execute("SELECT cts_id FROM CTS WHERE cts_number = %s AND house_id = %s", (old_cts_number, house_id))
-        cts_id = cursor.fetchone()[0]
-        print(old_cts_number, cts_id)
-
-        # Fetch room_id using old_room_number, cts_id, and house_id
-        cursor.execute("SELECT room_id FROM Rooms WHERE room_number = %s AND cts_id = %s AND house_id = %s", (old_room_number, cts_id, house_id))
-        room_id = cursor.fetchone()[0]
-        print(old_room_number, room_id)
-
-        # Update Houses, CTS, Rooms, and Tenants tables
-        try:
-            cursor.execute("UPDATE Houses SET house_number = %s WHERE house_id = %s", (house_number, house_id))
-            cursor.execute("UPDATE CTS SET cts_number = %s WHERE cts_id = %s", (cts_number, cts_id))
-            cursor.execute("UPDATE Rooms SET room_number = %s WHERE room_id = %s", (room_number, room_id))
-        except Exception as e:
-            print(e, 'Error updating HOUSE, CTS, Room')
-
-        try:
-            cursor.execute("""
-                UPDATE Tenants 
-                SET tenant_name = %s, tenant_mobile = %s, tenant_dod = %s, tenant_gender = %s, notes = %s 
-                WHERE room_id = %s
-                """, (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id))
-        except Exception as e:
-            print(e, 'Error updating tenants')
-
-        print()
+        house_id = insert_house(cursor, house_number)
+        cts_id = insert_cts(cursor, house_id, cts_number)
+        room_id = insert_room(cursor, house_id, cts_id, room_number)
+        if room_id is None:
+            return False, "Room already exists for this house and CTS."
+        insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id)
         connection.commit()
+        return True, "Success"
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        connection.rollback()
+        return False, f"Unable to insert data due to {err}"
+    finally:
+        cursor.close()
         connection.close()
+
+
+def get_house_id_by_house_number(cursor, house_number):
+    return get_id_from_table(cursor, "Houses", {"house_number": house_number})
+
+
+def get_cts_id_by_cts_number_and_house_id(cursor, cts_number, house_id):
+    return get_id_from_table(cursor, "CTS", {"cts_number": cts_number, "house_id": house_id})
+
+
+def get_room_id_by_cts_id_and_house_id(cursor, cts_id, house_id):
+    return get_id_from_table(cursor, "Rooms", {"cts_id": cts_id, "house_id": house_id})
+
+
+def get_id_from_table(cursor, table_name, conditions):
+    id_column = f"{table_name[:-1].lower()}_id" if table_name.endswith("s") else f"{table_name.lower()}_id"
+    query = f"SELECT {id_column} FROM {table_name} WHERE " + " AND ".join([f"{col}=%s" for col in conditions.keys()])
+    cursor.execute(query, list(conditions.values()))
+    result = cursor.fetchone()
+    return result[0] if result else None
+
+
+def update_tenant_info(cursor, tenant_data, room_id):
+    query = """
+        UPDATE Tenants
+        SET 
+            tenant_name = %s,
+            tenant_mobile = %s,
+            tenant_dod = %s,
+            tenant_gender = %s,
+            notes = %s
+        WHERE room_id = %s
+    """
+    cursor.execute(query, list(tenant_data.values()) + [room_id])
+
+
+def insert_into_table(cursor, table_name, data):
+    columns = ", ".join(data.keys())
+    placeholders = ", ".join(["%s"] * len(data))
+    query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+    cursor.execute(query, list(data.values()))
+    return cursor.lastrowid
+
+
+def update_master_entry(old_house_number, old_cts_number, old_room_number, house_number, cts_number, room_number,
+                        tenant_name, tenant_mobile, tenant_dod, notes, tenant_gender):
+    connection = create_connection()
+    cursor = connection.cursor(buffered=True)
+
+    try:
+        if old_house_number == house_number and old_cts_number == cts_number and old_room_number == room_number:
+            try:
+                old_house_id = get_house_id_by_house_number(cursor, old_house_number)
+                old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, old_house_id)
+                old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, old_house_id)
+
+                tenant_data = {
+                    "tenant_name": tenant_name or None,
+                    "tenant_mobile": tenant_mobile or None,
+                    "tenant_dod": tenant_dod,
+                    "tenant_gender": tenant_gender or None,
+                    "notes": notes or None
+                }
+
+                update_tenant_info(cursor, tenant_data, old_room_id)
+
+                connection.commit()
+                connection.close()
+            except Exception as e:
+                print(e)
+
+        if old_house_number != house_number and old_cts_number == cts_number and old_room_number == room_number:
+            result = get_house_id_by_house_number(cursor, house_number)
+
+            if result is None:
+                new_house_id = insert_into_table(cursor, "Houses", {"house_number": house_number})
+                new_cts_id = insert_into_table(cursor, "CTS", {"cts_number": cts_number, "house_id": new_house_id})
+
+                old_house_id = get_house_id_by_house_number(cursor, old_house_number)
+                old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, old_house_id)
+                old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, old_house_id)
+
+                cursor.execute("UPDATE Rooms SET cts_id=%s, house_id=%s WHERE room_id=%s",
+                               (new_cts_id, new_house_id, old_room_id))
+
+                tenant_data = {
+                    "tenant_name": tenant_name or None,
+                    "tenant_mobile": tenant_mobile or None,
+                    "tenant_dod": tenant_dod,
+                    "tenant_gender": tenant_gender or None,
+                    "notes": notes or None
+                }
+
+                update_tenant_info(cursor, tenant_data, old_room_id)
+
+                connection.commit()
+                connection.close()
+            else:
+                house_id = result[0]
+                cts_id_result = get_cts_id_by_cts_number_and_house_id(cursor, cts_number, house_id)
+
+                if cts_id_result is None:
+                    new_cts_id = insert_into_table(cursor, "CTS", {"cts_number": cts_number, "house_id": house_id})
+                    old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, house_id)
+                    old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, house_id)
+
+                    cursor.execute("UPDATE Rooms SET cts_id=%s, house_id=%s WHERE room_id=%s",
+                                   (new_cts_id, house_id, old_room_id))
+
+                    tenant_data = {
+                        "tenant_name": tenant_name or None,
+                        "tenant_mobile": tenant_mobile or None,
+                        "tenant_dod": tenant_dod,
+                        "tenant_gender": tenant_gender or None,
+                        "notes": notes or None
+                    }
+
+                    update_tenant_info(cursor, tenant_data, old_room_id)
+
+                    connection.commit()
+                    connection.close()
+
+                else:
+                    cts_id = cts_id_result[0]
+                    cursor.execute("SELECT room_id FROM Rooms WHERE cts_id=%s AND house_id=%s", (cts_id, house_id))
+                    room_id_result = cursor.fetchone()
+                    if not room_id_result:
+                        old_house_id = get_house_id_by_house_number(cursor, old_house_number)
+                        old_cts_id = get_cts_id_by_cts_number_and_house_id(cursor, old_cts_number, old_house_id)
+                        old_room_id = get_room_id_by_cts_id_and_house_id(cursor, old_cts_id, old_house_id)
+
+                        cursor.execute("UPDATE Rooms SET cts_id=%s, house_id=%s WHERE room_id=%s",
+                                       (cts_id, house_id, old_room_id))
+
+                        tenant_data = {
+                            "tenant_name": tenant_name or None,
+                            "tenant_mobile": tenant_mobile or None,
+                            "tenant_dod": tenant_dod,
+                            "tenant_gender": tenant_gender or None,
+                            "notes": notes or None
+                        }
+
+                        update_tenant_info(cursor, tenant_data, old_room_id)
+
+                        connection.commit()
+                        connection.close()
+
+                    else:
+                        print('error, room number already exists for New house number')
 
     except Exception as e:
-        print(old_house_number, old_cts_number, old_room_number, house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes, tenant_gender)
-        print(f"An error occurred: {e}")
         connection.rollback()
+        return f"An error occurred: {e}"
     finally:
+        cursor.close()
         connection.close()
+
 
 def delete_master_entry(old_house_number, old_cts_number, old_room_number):
     connection = create_connection()
     cursor = connection.cursor()
 
-    house_query = "SELECT house_id FROM Houses WHERE house_number = %s"
-    print(house_query)
-    cursor.execute(house_query, (old_house_number,))
+    house_id_query = "SELECT house_id FROM Houses WHERE house_number = %s"
+    cursor.execute(house_id_query, (old_house_number,))
     house_id = cursor.fetchone()[0]
 
     # Fetching the cts_id based on cts_number and house_id
-    cts_query = "SELECT cts_id FROM CTS WHERE cts_number = %s AND house_id = %s"
-    print(cts_query)
-    cursor.execute(cts_query, (old_cts_number, house_id))
+    cts_id_query = "SELECT cts_id FROM CTS WHERE cts_number = %s AND house_id = %s"
+    cursor.execute(cts_id_query, (old_cts_number, house_id))
     cts_id = cursor.fetchone()[0]
 
     # Fetching the room_id based on room_number, cts_id, and house_id
-    room_query = "SELECT room_id FROM Rooms WHERE room_number = %s AND cts_id = %s AND house_id = %s"
-    print(room_query)
-    cursor.execute(room_query, (old_room_number, cts_id, house_id))
+    room_id_query = "SELECT room_id FROM Rooms WHERE room_number = %s AND cts_id = %s AND house_id = %s"
+    cursor.execute(room_id_query, (old_room_number, cts_id, house_id))
     room_id = cursor.fetchone()[0]
 
-    print(house_id, cts_id, room_id)
     # Deleting the tenant based on room_id
     tenant_query = "DELETE FROM Tenants WHERE room_id = %s"
     cursor.execute(tenant_query, (room_id,))
 
+    room_query = "DELETE FROM Rooms WHERE room_id = %s"
+    cursor.execute(room_query, (room_id,))
+
     connection.commit()
     cursor.close()
     connection.close()
-

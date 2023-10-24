@@ -1,62 +1,35 @@
-from PyQt5.QtWidgets import QWidget, QComboBox, QFormLayout, QLabel, QLineEdit, QVBoxLayout, QPushButton, QRadioButton, QDateEdit, QGridLayout, QCheckBox
-import database
-from PyQt5.QtWidgets import QCompleter
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import QDate
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import (QWidget, QComboBox, QFormLayout, QLabel, QLineEdit,
+                             QVBoxLayout, QPushButton, QRadioButton, QDateEdit,
+                             QGridLayout, QCheckBox, QMessageBox, QTableWidget,
+                             QTableWidgetItem, QHBoxLayout, QCompleter)
+from PyQt5.QtCore import Qt, QDate
 from base_class import BaseWindow
-from PyQt5.QtWidgets import QHBoxLayout
+from datetime import date
+import database
 
 
 class MasterEntry(BaseWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
-        self.operation = "insert"  # By default, the operation is insert
-        self.current_row = None  # To store the tenant_id when editing
+        self.set_default_state()
+
+    def set_default_state(self):
+        self.operation = "insert"
+        self.current_row = None
+        self.setWindowTitle("Master Entry - Add")
 
     def init_ui(self):
         layout = QFormLayout()
 
         # --------------------------- HOUSE NUMBER --------------------------- #
-        # House Number Combo Box
-        self.house_number_combo = QComboBox(self)
-        self.house_number_combo.setEditable(True)
-        # Set up QCompleter for the ComboBox
-        self.completer = QCompleter(self)
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.setFilterMode(Qt.MatchContains)
-        self.house_number_combo.setCompleter(self.completer)
-        # Load house numbers into ComboBox and Completer
-        house_numbers = database.get_house_numbers()
-        self.house_number_combo.addItems(house_numbers)
-        self.house_number_combo.setCurrentIndex(-1)
-        self.completer.setModel(self.house_number_combo.model())
+        self.house_number_combo = self.setup_combobox(database.get_house_numbers)
 
         # --------------------------- ROOM NUMBER --------------------------- #
-        self.room_number_combo = QComboBox(self)
-        self.room_number_combo.setEditable(True)
-        room_completer = QCompleter(self)
-        room_completer.setCaseSensitivity(Qt.CaseInsensitive)
-        room_completer.setFilterMode(Qt.MatchContains)
-        self.room_number_combo.setCompleter(room_completer)
-        room_numbers = database.get_room_numbers()
-        self.room_number_combo.addItems(room_numbers)
-        self.room_number_combo.setCurrentIndex(-1)
-        room_completer.setModel(self.room_number_combo.model())
+        self.room_number_combo = self.setup_combobox(database.get_room_numbers)
 
         # --------------------------- CTS NUMBER --------------------------- #
-        self.cts_number_combo = QComboBox(self)
-        self.cts_number_combo.setEditable(True)
-        cts_completer = QCompleter(self)
-        cts_completer.setCaseSensitivity(Qt.CaseInsensitive)
-        cts_completer.setFilterMode(Qt.MatchContains)
-        self.cts_number_combo.setCompleter(cts_completer)
-        cts_numbers = database.get_cts_numbers()
-        self.cts_number_combo.addItems(cts_numbers)
-        self.cts_number_combo.setCurrentIndex(-1)
-        cts_completer.setModel(self.cts_number_combo.model())
+        self.cts_number_combo = self.setup_combobox(database.get_cts_numbers)
 
         # --------------------------- TENANT ATTRIBUTES --------------------------- #
         self.tenant_name_input = QLineEdit(self)
@@ -78,6 +51,9 @@ class MasterEntry(BaseWindow):
         self.clear_form_btn = QPushButton("Clear Form", self)
         self.clear_form_btn.clicked.connect(self.clear_form)
 
+        self.search_bar = QLineEdit(self)
+        self.search_bar.setPlaceholderText("Search...")
+
         # Adding widgets to layout
         layout.addRow(QLabel("House Number"), self.house_number_combo)
         layout.addRow(QLabel("CTS Number"), self.cts_number_combo)
@@ -93,23 +69,46 @@ class MasterEntry(BaseWindow):
         gender_layout.addWidget(self.female_rb, 0, 1)
         layout.addRow(QLabel("Tenant Gender"), gender_layout)
 
-        # layout.addRow(self.submit_btn)
-        # layout.addRow(self.clear_form_btn)
-        # layout.addRow(self.submit_btn, self.clear_form_btn)
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.submit_btn)
         button_layout.addWidget(self.clear_form_btn)
         layout.addRow(button_layout)
+        layout.addRow(QLabel("Search"), self.search_bar)
+        self.search_bar.textChanged.connect(self.filter_table)
 
         self.master_entry_table = QTableWidget(self)
         self.master_entry_table.setColumnCount(10)  # Number of columns based on the fields you have
-        self.master_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "Tenant Name", "Tenant Mobile", "Tenant DoD", "Notes", "Gender", "Edit", "Delete"])
+        self.master_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "T. Name",
+                                                           "T. Mobile", "T. DoD", "Notes", "Gender", "Edit", "Delete"])
         layout.addRow(self.master_entry_table)
         self.populate_table()
 
         self.setLayout(layout)
 
-    def handle_submission(self):  # TODO: ADD VALIDATION OF EXISTING DATA
+    def setup_combobox(self, data_function):
+        combo = QComboBox(self)
+        combo.setEditable(True)
+        completer = QCompleter(self)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        combo.setCompleter(completer)
+        data = data_function()
+        combo.addItems(data)
+        combo.setCurrentIndex(-1)
+        completer.setModel(combo.model())
+        return combo
+
+    def refresh_combo_box(self, combo_box, data_function):
+        combo_box.clear()
+        data = data_function()
+        combo_box.addItems(data)
+        combo_box.setCurrentIndex(-1)
+
+    def filter_table(self):
+        search_term = self.search_bar.text().lower()
+        self.populate_table(search_term)
+
+    def handle_submission(self):
         try:
             if not self.validate_input():
                 return
@@ -122,27 +121,38 @@ class MasterEntry(BaseWindow):
                 tenant_dod = None
             else:
                 tenant_dod = self.tenant_dod_input.date().toString("yyyy-MM-dd")
-                # tenant_dod = self.tenant_dod_input.date().toString("yyyy-MM-dd")  # Convert QDate to string in "yyyy-MM-dd" format
             notes = self.notes_input.text()
             tenant_gender = "Male" if self.male_rb.isChecked() else "Female"
 
             if self.operation == "insert":
-                database.insert_master_entry(house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes, tenant_gender)
-                QMessageBox.information(self, "Success", "Data inserted successfully!")
+                status, message = database.insert_master_entry(house_number, cts_number, room_number, tenant_name,
+                                                               tenant_mobile, tenant_dod, notes, tenant_gender)
+                print(status, message)
+                if status:
+                    QMessageBox.information(self, "Success", "Data inserted successfully!")
+                    self.clear_form()
+                    self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
+                    self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
+                    self.refresh_combo_box(self.cts_number_combo, database.get_cts_numbers)
+                else:
+                    QMessageBox.warning(self, "Error", str(message))
             else:
-                database.update_master_entry(self.old_house_number, self.old_cts_number, self.old_room_number, house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes, tenant_gender)
-                self.operation = "insert"  # Reset operation to insert after handling submission
-                self.current_row = None
+                database.update_master_entry(self.old_house_number, self.old_cts_number, self.old_room_number,
+                                             house_number, cts_number, room_number, tenant_name, tenant_mobile,
+                                             tenant_dod, notes, tenant_gender)
                 QMessageBox.information(self, "Success", "Data Updated successfully!")
+                self.clear_form()
+                self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
+                self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
+                self.refresh_combo_box(self.cts_number_combo, database.get_cts_numbers)
 
-            self.clear_form()
             self.populate_table()
+            self.setWindowTitle("Master Entry - Add")
 
         except Exception as e:
             QMessageBox.critical(self, "Error", "Data not inserted!\nError: " + str(e))
 
     def clear_form(self):
-        # Clear all the input fields
         self.house_number_combo.setCurrentIndex(-1)
         self.cts_number_combo.setCurrentIndex(-1)
         self.room_number_combo.setCurrentIndex(-1)
@@ -150,39 +160,50 @@ class MasterEntry(BaseWindow):
         self.tenant_mobile_input.clear()
         self.tenant_dod_input.setDate(QDate.currentDate())  # Resetting to the current date
         self.notes_input.clear()
-        # Resetting gender radio buttons (assuming male as default)
         self.male_rb.setChecked(False)
         self.female_rb.setChecked(False)
+        self.operation = "insert"  # Reset operation to insert after handling submission
+        self.current_row = None
+        self.setWindowTitle("Master Entry - Add")
 
-    def populate_table(self):
-        master_entries = database.get_all_master_entries()  # Assuming a method to fetch all entries
+    def populate_table(self, search_term=''):
+        master_entries = database.get_all_master_entries()
+        master_entries = list(reversed(master_entries))
+
+        if search_term:
+            master_entries = [
+                entry for entry in master_entries if
+                search_term in entry['tenant_name'].lower() or
+                search_term in str(entry['house_number']).lower() or
+                search_term in str(entry['room_number']).lower()
+            ]
 
         self.master_entry_table.setRowCount(len(master_entries))
-
         for row, entry in enumerate(master_entries):
-            self.master_entry_table.setItem(row, 0, QTableWidgetItem(entry['house_number']))
-            self.master_entry_table.setItem(row, 1, QTableWidgetItem(entry['room_number']))
-            self.master_entry_table.setItem(row, 2, QTableWidgetItem(entry['cts_number']))
-            self.master_entry_table.setItem(row, 3, QTableWidgetItem(entry['tenant_name']))
-            self.master_entry_table.setItem(row, 4, QTableWidgetItem(entry['tenant_mobile']))
-            # self.master_entry_table.setItem(row, 5, QTableWidgetItem(entry['tenant_dod'].strftime('%d-%m-%Y')))
-            if entry['tenant_dod']:
-                self.master_entry_table.setItem(row, 5, QTableWidgetItem(entry['tenant_dod'].strftime('%d-%m-%Y')))
-            else:
-                self.master_entry_table.setItem(row, 5, QTableWidgetItem("Alive"))
-            self.master_entry_table.setItem(row, 6, QTableWidgetItem(entry['notes']))
-            self.master_entry_table.setItem(row, 7, QTableWidgetItem(entry['tenant_gender']))
+            for col, value in enumerate(
+                    [entry['house_number'], entry['room_number'], entry['cts_number'], entry['tenant_name'],
+                     entry['tenant_mobile'], entry.get('tenant_dod', 'Alive'), entry['notes'], entry['tenant_gender']]):
+                item = QTableWidgetItem("" if value is None else str(value))
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                self.master_entry_table.setItem(row, col, item)
+
+            if entry.get('tenant_dod') and isinstance(entry['tenant_dod'], (str, date)):
+                item = self.master_entry_table.item(row, 5)
+                item.setText(entry['tenant_dod'].strftime('%d-%m-%Y'))
 
             edit_btn = QPushButton("Edit", self)
-            edit_btn.clicked.connect(lambda _, row=row: self.edit_entry(row))
+            edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
             self.master_entry_table.setCellWidget(row, 8, edit_btn)
 
             delete_btn = QPushButton("Delete", self)
-            delete_btn.clicked.connect(lambda _, row=row: self.delete_entry(row))
+            delete_btn.clicked.connect(lambda checked, r=row: self.delete_entry(r))
             self.master_entry_table.setCellWidget(row, 9, delete_btn)
 
     def validate_input(self):
-        mandatory_fields = [(self.house_number_combo.currentText(), "House Number"), (self.room_number_combo.currentText(), "Room Number"), (self.cts_number_combo.currentText(), "CTS Number"), (self.tenant_name_input.text(), "Tenant Name")]
+        mandatory_fields = [(self.house_number_combo.currentText(), "House Number"),
+                            (self.room_number_combo.currentText(), "Room Number"),
+                            (self.cts_number_combo.currentText(), "CTS Number"),
+                            (self.tenant_name_input.text(), "Tenant Name")]
 
         if self.male_rb.isChecked() or self.female_rb.isChecked():
             gender = "Male" if self.male_rb.isChecked() else "Female"
@@ -220,7 +241,7 @@ class MasterEntry(BaseWindow):
         self.tenant_mobile_input.setText(tenant_mobile)
         # Convert the date from string to QDate and then set it
         # self.tenant_dod_input.setDate(QDate.fromString(tenant_dod, "dd-MM-yyyy"))
-        if tenant_dod == "Alive":
+        if tenant_dod == "":
             self.is_alive_checkbox.setChecked(True)
             self.tenant_dod_input.clear()
         else:
@@ -236,10 +257,12 @@ class MasterEntry(BaseWindow):
 
         self.operation = "update"
         self.current_row = row
+        self.setWindowTitle("Master Entry - Edit")
 
     def delete_entry(self, row):
         # Confirmation Dialog
-        choice = QMessageBox.question(self, "Confirmation", "Are you sure you want to delete this entry?", QMessageBox.Yes | QMessageBox.No)
+        choice = QMessageBox.question(self, "Confirmation", "Are you sure you want to delete this entry?",
+                                      QMessageBox.Yes | QMessageBox.No)
 
         if choice == QMessageBox.No:
             return
@@ -249,7 +272,6 @@ class MasterEntry(BaseWindow):
         cts_number = self.master_entry_table.item(row, 2).text()
 
         try:
-            print(house_number, cts_number, room_number)
             database.delete_master_entry(house_number, cts_number, room_number)
             QMessageBox.information(self, "Success", "Tenant data deleted successfully!")
             self.populate_table()
