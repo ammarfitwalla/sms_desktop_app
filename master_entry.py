@@ -28,11 +28,11 @@ class MasterEntry(BaseWindow):
         # --------------------------- HOUSE NUMBER --------------------------- #
         self.house_number_combo = self.setup_combobox(database.get_house_numbers)
 
-        # --------------------------- CTS NUMBER --------------------------- #
-        self.cts_number_combo = self.setup_combobox(database.get_cts_numbers)
-
         # --------------------------- ROOM NUMBER --------------------------- #
         self.room_number_combo = self.setup_combobox(database.get_room_numbers)
+
+        # --------------------------- CTS NUMBER --------------------------- #
+        self.cts_number_combo = self.setup_combobox(database.get_cts_numbers)
 
         # --------------------------- TENANT ATTRIBUTES --------------------------- #
         self.tenant_name_input = QLineEdit(self)
@@ -45,6 +45,7 @@ class MasterEntry(BaseWindow):
         self.notes_input = QLineEdit(self)
         self.male_rb = QRadioButton("Male", self)
         self.female_rb = QRadioButton("Female", self)
+        # self.others_rb = QRadioButton("Others", self)
 
         # --------------------------- SUBMIT BUTTON --------------------------- #
         self.submit_btn = QPushButton("Submit", self)
@@ -59,8 +60,8 @@ class MasterEntry(BaseWindow):
 
         # Adding widgets to layout
         layout.addRow(QLabel("House Number"), self.house_number_combo)
-        layout.addRow(QLabel("CTS Number"), self.cts_number_combo)
         layout.addRow(QLabel("Room Number"), self.room_number_combo)
+        layout.addRow(QLabel("CTS Number"), self.cts_number_combo)
         layout.addRow(QLabel("Tenant Name"), self.tenant_name_input)
         layout.addRow(QLabel("Tenant Mobile Number"), self.tenant_mobile_input)
         layout.addRow(self.is_alive_checkbox)
@@ -70,6 +71,7 @@ class MasterEntry(BaseWindow):
         gender_layout = QGridLayout()
         gender_layout.addWidget(self.male_rb, 0, 0)
         gender_layout.addWidget(self.female_rb, 0, 1)
+        # gender_layout.addWidget(self.others_rb, 0, 2)
         layout.addRow(QLabel("Tenant Gender"), gender_layout)
 
         button_layout = QHBoxLayout()
@@ -200,8 +202,7 @@ class MasterEntry(BaseWindow):
 
             edit_btn = QPushButton(self)
             edit_btn.setIcon(QIcon('icons' + os.sep + 'pen_icon.png'))
-            edit_btn.setIconSize(QSize(20, 20))  # Adjust the size values as needed
-            # edit_btn.setStyleSheet("QPushButton { color: blue; }")  # Change color as needed
+            edit_btn.setIconSize(QSize(20, 20))
             edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
             self.master_entry_table.setCellWidget(row, 8, edit_btn)
 
