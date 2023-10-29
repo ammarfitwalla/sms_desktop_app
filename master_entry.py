@@ -1,11 +1,14 @@
+import os
+
 from PyQt5.QtWidgets import (QWidget, QComboBox, QFormLayout, QLabel, QLineEdit,
                              QVBoxLayout, QPushButton, QRadioButton, QDateEdit,
                              QGridLayout, QCheckBox, QMessageBox, QTableWidget,
                              QTableWidgetItem, QHBoxLayout, QCompleter)
-from PyQt5.QtCore import Qt, QDate
-from base_class import BaseWindow
-from datetime import date
 import database
+from datetime import date
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt, QDate, QSize
+from base_class import BaseWindow
 
 
 class MasterEntry(BaseWindow):
@@ -25,11 +28,11 @@ class MasterEntry(BaseWindow):
         # --------------------------- HOUSE NUMBER --------------------------- #
         self.house_number_combo = self.setup_combobox(database.get_house_numbers)
 
-        # --------------------------- ROOM NUMBER --------------------------- #
-        self.room_number_combo = self.setup_combobox(database.get_room_numbers)
-
         # --------------------------- CTS NUMBER --------------------------- #
         self.cts_number_combo = self.setup_combobox(database.get_cts_numbers)
+
+        # --------------------------- ROOM NUMBER --------------------------- #
+        self.room_number_combo = self.setup_combobox(database.get_room_numbers)
 
         # --------------------------- TENANT ATTRIBUTES --------------------------- #
         self.tenant_name_input = QLineEdit(self)
@@ -78,8 +81,8 @@ class MasterEntry(BaseWindow):
 
         self.master_entry_table = QTableWidget(self)
         self.master_entry_table.setColumnCount(10)  # Number of columns based on the fields you have
-        self.master_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "T. Name",
-                                                           "T. Mobile", "T. DoD", "Notes", "Gender", "Edit", "Delete"])
+        self.master_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "Name",
+                                                           "Mobile", "DoD", "Notes", "Gender", "Edit", "Delete"])
         layout.addRow(self.master_entry_table)
         self.populate_table()
 
@@ -172,7 +175,7 @@ class MasterEntry(BaseWindow):
 
     def populate_table(self, search_term=''):
         master_entries = database.get_all_master_entries()
-        master_entries = list(reversed(master_entries))
+        # master_entries = list(reversed(master_entries))
 
         if search_term:
             master_entries = [
@@ -195,13 +198,23 @@ class MasterEntry(BaseWindow):
                 item = self.master_entry_table.item(row, 5)
                 item.setText(entry['tenant_dod'].strftime('%d-%m-%Y'))
 
-            edit_btn = QPushButton("Edit", self)
+            edit_btn = QPushButton(self)
+            edit_btn.setIcon(QIcon('icons' + os.sep + 'pen_icon.png'))
+            edit_btn.setIconSize(QSize(20, 20))  # Adjust the size values as needed
+            # edit_btn.setStyleSheet("QPushButton { color: blue; }")  # Change color as needed
             edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
             self.master_entry_table.setCellWidget(row, 8, edit_btn)
 
-            delete_btn = QPushButton("Delete", self)
+            delete_btn = QPushButton(self)
+            delete_btn.setIcon(QIcon('icons' + os.sep + 'delete_icon1.png'))
+            delete_btn.setIconSize(QSize(30, 30))
             delete_btn.clicked.connect(lambda checked, r=row: self.delete_entry(r))
             self.master_entry_table.setCellWidget(row, 9, delete_btn)
+
+        columns_to_adjust = [0, 1, 2, 3, 4, 5, 6, 7]  # Adjust indices as needed
+
+        for col in columns_to_adjust:
+            self.master_entry_table.resizeColumnToContents(col)
 
     def validate_input(self):
         mandatory_fields = [(self.house_number_combo.currentText(), "House Number"),

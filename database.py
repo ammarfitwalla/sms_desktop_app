@@ -64,6 +64,7 @@ def get_all_master_entries():
         JOIN Rooms r ON t.room_id = r.room_id
         JOIN CTS c ON r.cts_id = c.cts_id
         JOIN Houses h ON c.house_id = h.house_id
+        ORDER BY t.tenant_id DESC
     """
     cursor.execute(query)
     results = cursor.fetchall()
@@ -196,6 +197,7 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
     cursor = connection.cursor(buffered=True)
 
     try:
+        # --------------------------------- IF TENANT DETAILS IS UPDATED --------------------------------- #
         if old_house_number == house_number and old_cts_number == cts_number and old_room_number == room_number:
             try:
                 old_house_id = get_house_id_by_house_number(cursor, old_house_number)
@@ -220,6 +222,7 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
             except Exception as e:
                 print(e)
 
+        # --------------------------------- IF HOUSE NUMBER IS UPDATED --------------------------------- #
         if old_house_number != house_number and old_cts_number == cts_number and old_room_number == room_number:
             house_id = get_house_id_by_house_number(cursor, house_number)
 
@@ -304,9 +307,62 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                     else:
                         return False, "Room Number already exists!"
 
+        # --------------------------------- IF CTS NUMBER IS UPDATED --------------------------------- #
         if old_house_number == house_number and old_cts_number != cts_number and old_room_number == room_number:
-            pass
+            old_house_id = get_house_id_by_house_number(cursor, old_house_number)
+            cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, old_house_id)
 
+            if cts_id is None:
+                new_cts_id = insert_into_table(cursor, "CTS", {"cts_number": cts_number, "house_id": old_house_id})
+                old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
+                old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number, old_cts_id,
+                                                                         old_house_id)
+
+                cursor.execute("UPDATE Rooms SET cts_id=%s WHERE room_id=%s",(new_cts_id, old_room_id))
+
+                tenant_data = {
+                    "tenant_name": tenant_name or None,
+                    "tenant_mobile": tenant_mobile or None,
+                    "tenant_dod": tenant_dod,
+                    "tenant_gender": tenant_gender or None,
+                    "notes": notes or None
+                }
+
+                update_tenant_info(cursor, tenant_data, old_room_id)
+
+                connection.commit()
+                connection.close()
+                return True, "Data Updated Successfully!"
+
+            else:
+                room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, old_house_id)
+                if room_id is None:
+                    old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
+                    old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number,
+                                                                             old_cts_id,
+                                                                             old_house_id)
+
+                    cursor.execute("UPDATE Rooms SET cts_id=%s WHERE room_id=%s",
+                                   (cts_id, old_room_id))
+
+                    tenant_data = {
+                        "tenant_name": tenant_name or None,
+                        "tenant_mobile": tenant_mobile or None,
+                        "tenant_dod": tenant_dod,
+                        "tenant_gender": tenant_gender or None,
+                        "notes": notes or None
+                    }
+
+                    update_tenant_info(cursor, tenant_data, old_room_id)
+
+                    connection.commit()
+                    connection.close()
+
+                    return True, "Data Updated Successfully!"
+                else:
+                    return False, "Room Number already exists!"
+
+        # --------------------------------- IF ROOM NUMBER IS UPDATED --------------------------------- #
         if old_house_number == house_number and old_cts_number == cts_number and old_room_number != room_number:
             old_house_id = get_house_id_by_house_number(cursor, old_house_number)
             old_cts_id = get_cts_id_by_cts_number_house_id(cursor, old_cts_number, old_house_id)
