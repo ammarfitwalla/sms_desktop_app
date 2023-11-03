@@ -1,8 +1,8 @@
 import sys
 
-from PyQt5.QtCore import QDate
+from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
-    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout
+    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox
 from base_class import BaseWindow
 from database import *
 
@@ -11,6 +11,7 @@ class BillEntry(BaseWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
     def init_ui(self):
         layout = QGridLayout()
@@ -19,6 +20,7 @@ class BillEntry(BaseWindow):
         # Row 2
         self.rent_month_label = QLabel('Rent For Month Of')
         self.rent_month_date = QDateEdit()
+        self.rent_month_date.setDisplayFormat('MMMM yyyy')
         self.rent_month_date.setDate(QDate.currentDate())
         layout.addWidget(self.rent_month_label, 0, 0)
         layout.addWidget(self.rent_month_date, 0, 1)  # Spanning across two columns for space
@@ -68,16 +70,19 @@ class BillEntry(BaseWindow):
         # Row 5
         self.rent_from_label = QLabel('Rent From')
         self.rent_from_date = QDateEdit()
+        self.rent_from_date.setDisplayFormat('MMMM yyyy')
         self.rent_from_date.setDate(QDate.currentDate())
         self.rent_to_label = QLabel('Rent To')
         self.rent_to_date = QDateEdit()
+        self.rent_to_date.setDisplayFormat('MMMM yyyy')
+        self.rent_to_date.setDate(QDate.currentDate())
+        self.rent_to_date.setReadOnly(True)
         layout.addWidget(self.rent_from_label, 2, 2)
         layout.addWidget(self.rent_from_date, 2, 3)
         layout.addWidget(self.rent_to_label, 2, 4)
         layout.addWidget(self.rent_to_date, 2, 5)
 
         self.rent_month_date.dateChanged.connect(self.update_rent_to_date)
-
         self.rent_from_date.dateChanged.connect(self.update_total_months)
         self.rent_to_date.dateChanged.connect(self.update_total_months)
 
@@ -137,7 +142,7 @@ class BillEntry(BaseWindow):
 
         # Create Submit Button
         self.submit_button = QPushButton('Submit')
-        # self.submit_button.clicked.connect(self.get_data)
+        self.submit_button.clicked.connect(self.submit_data)
         buttons_layout.addWidget(self.submit_button)
 
         # Create Print Button
@@ -154,12 +159,13 @@ class BillEntry(BaseWindow):
                                                          "Mobile", "DoD", "Notes", "Gender", "Edit", "Delete"])
         layout.addWidget(self.bill_entry_table, 8, 0, 1, 6)
 
-    def update_rent_to_date(self, selected_date):
+    def update_rent_to_date(self):
         """
         Slot to handle the dateChanged signal of the rent_month_date.
-        It sets the date of rent_to_date to be the same as the selected_date.
+        It sets the date of rent_to_date to be the same as the rent_month_date.
         """
-        self.rent_to_date.setDate(selected_date)
+        rent_month_date = self.rent_month_date.date()
+        self.rent_to_date.setDate(rent_month_date)
 
     def update_total_months(self):
         rent_from_date = self.rent_from_date.date()
@@ -205,43 +211,46 @@ class BillEntry(BaseWindow):
         self.room_number_combo.clear()
         for room in rooms:
             room_name, room_id = room[0], room[1]
-            print(room_name, room_id)
             self.room_number_combo.addItem(room_name, room_id)
 
     def room_changed(self):
         current_room_id = self.room_number_combo.currentData()
-        cts_number = self.get_cts_number(current_room_id)  # Replace with your DB call
-        self.cts_number_line.setText(cts_number)
+        if current_room_id:
+            cts_number = get_cts_number_by_room_id(current_room_id)  # Replace with your DB call
+            self.cts_number_line.setText(cts_number)
+        else:
+            self.cts_number_line.clear()
 
-    def get_houses_data(self):
-        return [{'name': 'House A', 'id': 1}, {'name': 'House B', 'id': 2}]
+    def submit_data(self):
+        # List of mandatory fields as (QLineEdit, Field Name) pairs
+        print('in submit data')
+        mandatory_fields = [
+            (self.house_number_combo, "House Number"),
+            (self.room_number_combo, "Room Number"),
+            (self.amount_line, "@"),
+            (self.purpose_line, "Purpose For"),
+            # Add other mandatory fields here as necessary
+        ]
 
-    def get_cts_number(self, room_id):
-        # This should return the CTS number based on the room_id
-        return 'CTS1234'
+        # Validate mandatory fields
+        for field, field_name in mandatory_fields:
+            if isinstance(field, QComboBox):
+                if not field.currentText().strip():
+                    QMessageBox.warning(self, "Missing Data", f"Please select a {field_name}.")
+                    return
+            elif not field.text().strip():  # Assuming QLineEdit or similar widgets for other fields
+                QMessageBox.warning(self, "Missing Data", f"Please enter the {field_name}.")
+                return
 
-    def get_data(self):
-        data = {
-            "house_number": self.house_number_combo.currentText(),
-            "room_number": self.room_number_combo.currentText(),
-            "cts_number": self.cts_number_line.text(),
-            "tenant_name": self.tenant_name_line.text(),
-            "bill_month": self.bill_month_date.date().toString('MMMM, yyyy'),
-            "book_number": self.book_number_spin.value(),
-            "bill_number": self.bill_number_spin.value(),
-            "purpose": self.purpose_line.text(),
-            "rent_from": self.rent_from_date.date().toString('MMMM, yyyy'),
-            "rent_to": self.rent_to_date.date().toString('MMMM, yyyy'),
-            "amount": self.amount_spin.value(),
-            "total_months": self.total_months_spin.value(),
-            "total_rupees": self.total_rupees_line.text(),
-            "received_date": self.received_date.date().toString('MMMM, yyyy'),
-            "extra_payment": self.extra_payment_spin.value(),
-            "agreement_date": self.agreement_date.date().toString('MMMM, yyyy'),
-            "notes": self.notes_text.toPlainText(),
-        }
-        print(data)
-        return data
+        rent_month = self.rent_month_date.date().toString("MMMM yyyy")
+        print(rent_month)
+        house_number = self.house_number_combo.currentText()
+        print(house_number)
+        room_number = self.room_number_combo.currentText()
+        print(room_number)
+        cts_number = self.cts_number_line.text()
+        print(cts_number)
+        # ... collect other input data ...
 
 
 if __name__ == '__main__':

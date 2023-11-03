@@ -453,5 +453,17 @@ def get_rooms_data_by_house_id(house_id):
     return [[item[0], item[1]] for item in results]
 
 
-def get_cts_number_by_room_number(room_number):
-    pass
+def get_cts_number_by_room_id(room_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT cts_id FROM Rooms WHERE room_id=%s"
+    cursor.execute(query, (room_id,))
+    cts_id = cursor.fetchone()[0]
+
+    query = "SELECT DISTINCT cts_number FROM CTS WHERE cts_id=%s"
+    cursor.execute(query, (cts_id,))
+    cts_number = cursor.fetchone()[0]
+
+    connection.close()
+    return cts_number
