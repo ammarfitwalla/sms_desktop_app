@@ -16,6 +16,23 @@ class BillEntry(BaseWindow):
         layout = QGridLayout()
         self.setLayout(layout)
 
+        # Row 2
+        self.rent_month_label = QLabel('Rent For Month Of')
+        self.rent_month_date = QDateEdit()
+        self.rent_month_date.setDate(QDate.currentDate())
+        layout.addWidget(self.rent_month_label, 0, 0)
+        layout.addWidget(self.rent_month_date, 0, 1)  # Spanning across two columns for space
+
+        # Row 3
+        self.book_number_label = QLabel('Book Number')
+        self.book_number_line = QLineEdit()
+        self.bill_number_label = QLabel('Bill Number')
+        self.bill_number_line = QLineEdit()
+        layout.addWidget(self.book_number_label, 0, 2)
+        layout.addWidget(self.book_number_line, 0, 3)
+        layout.addWidget(self.bill_number_label, 0, 4)
+        layout.addWidget(self.bill_number_line, 0, 5)
+
         # Row 1
         self.house_number_label = QLabel('House Number')
         self.house_number_combo = QComboBox()
@@ -34,34 +51,17 @@ class BillEntry(BaseWindow):
 
         # Explicitly calling house_changed to update room and CTS fields based on the initially displayed house
         self.house_changed()
-        layout.addWidget(self.house_number_label, 0, 0)
-        layout.addWidget(self.house_number_combo, 0, 1)
-        layout.addWidget(self.room_number_label, 0, 2)
-        layout.addWidget(self.room_number_combo, 0, 3)
-        layout.addWidget(self.cts_number_label, 0, 4)
-        layout.addWidget(self.cts_number_line, 0, 5)
-
-        # Row 2
-        self.rent_month_label = QLabel('Rent For Month Of')
-        self.rent_month_date = QDateEdit()
-        self.rent_month_date.setDate(QDate.currentDate())
-        layout.addWidget(self.rent_month_label, 1, 0)
-        layout.addWidget(self.rent_month_date, 1, 1)  # Spanning across two columns for space
-
-        # Row 3
-        self.book_number_label = QLabel('Book Number')
-        self.book_number_line = QLineEdit()
-        self.bill_number_label = QLabel('Bill Number')
-        self.bill_number_line = QLineEdit()
-        layout.addWidget(self.book_number_label, 1, 2)
-        layout.addWidget(self.book_number_line, 1, 3)
-        layout.addWidget(self.bill_number_label, 1, 4)
-        layout.addWidget(self.bill_number_line, 1, 5)
+        layout.addWidget(self.house_number_label, 1, 0)
+        layout.addWidget(self.house_number_combo, 1, 1)
+        layout.addWidget(self.room_number_label, 1, 2)
+        layout.addWidget(self.room_number_combo, 1, 3)
+        layout.addWidget(self.cts_number_label, 1, 4)
+        layout.addWidget(self.cts_number_line, 1, 5)
 
         # Row 4
         self.purpose_label = QLabel('Purpose For')
         self.purpose_line = QLineEdit()
-        self.purpose_line.setText('For Residence')
+        # self.purpose_line.setText('For Residence')
         layout.addWidget(self.purpose_label, 2, 0)
         layout.addWidget(self.purpose_line, 2, 1)
 
@@ -78,22 +78,30 @@ class BillEntry(BaseWindow):
 
         self.rent_month_date.dateChanged.connect(self.update_rent_to_date)
 
+        self.rent_from_date.dateChanged.connect(self.update_total_months)
+        self.rent_to_date.dateChanged.connect(self.update_total_months)
+
         # Row 6
         self.amount_label = QLabel('@')
         self.amount_line = QLineEdit()
-        self.amount_line.setText('350')
+        # self.amount_line.setText('350')
+        self.amount_line.textChanged.connect(self.update_total_rupees)
         layout.addWidget(self.amount_label, 3, 0)
         layout.addWidget(self.amount_line, 3, 1)
 
         # Row 7
         self.total_months_label = QLabel('Total Months')
         self.total_months_line = QLineEdit()
+        self.total_months_line.setReadOnly(True)
+        self.total_months_line.textChanged.connect(self.update_total_rupees)  # Connect to slot method
         layout.addWidget(self.total_months_label, 3, 2)
         layout.addWidget(self.total_months_line, 3, 3)
 
         # Row 8
         self.total_rupees_label = QLabel('Total Rupees')
         self.total_rupees_line = QLineEdit()
+        self.total_rupees_line.setReadOnly(True)
+        self.total_rupees_line.setText('0')
         layout.addWidget(self.total_rupees_label, 3, 4)
         layout.addWidget(self.total_rupees_line, 3, 5)
 
@@ -152,6 +160,38 @@ class BillEntry(BaseWindow):
         It sets the date of rent_to_date to be the same as the selected_date.
         """
         self.rent_to_date.setDate(selected_date)
+
+    def update_total_months(self):
+        rent_from_date = self.rent_from_date.date()
+        rent_to_date = self.rent_to_date.date()
+
+        # Calculate the difference in months
+        month_diff = ((rent_to_date.year() - rent_from_date.year()) * 12 +
+                      rent_to_date.month() - rent_from_date.month() + 1)
+        total_months = max(0, month_diff)
+
+        # Update the total_months_line QLineEdit
+        self.total_months_line.setText(str(total_months))
+        return total_months
+
+    def update_total_rupees(self):
+        # Get the values from the amount and total months QLineEdit widgets
+        amount_text = self.amount_line.text()
+        total_months_text = self.total_months_line.text()
+
+        try:
+            # Convert the text to float values
+            amount = float(amount_text)
+            total_months = float(total_months_text)
+
+            # Calculate the product
+            total_rupees = amount * total_months
+
+            # Update the total_rupees_line QLineEdit with the calculated value
+            self.total_rupees_line.setText(str(total_rupees))
+        except ValueError:
+            # Handle the case where the input is not a valid float
+            self.total_rupees_line.setText('0')
 
     def populate_houses_dropdown(self):
         houses = get_house_data()  # Replace with your DB call
