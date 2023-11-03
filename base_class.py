@@ -15,5 +15,5 @@ class BaseWindow(QDialog):
 
     def set_default_font(self):
         font = QFont()
-        font.setPointSize(14)  # You can adjust this value as needed
+        font.setPointSize(12)  # You can adjust this value as needed
         self.setFont(font)

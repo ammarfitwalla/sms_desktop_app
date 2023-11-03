@@ -1,14 +1,15 @@
 import os
 
-from PyQt5.QtWidgets import (QWidget, QComboBox, QFormLayout, QLabel, QLineEdit,
-                             QVBoxLayout, QPushButton, QRadioButton, QDateEdit,
-                             QGridLayout, QCheckBox, QMessageBox, QTableWidget,
-                             QTableWidgetItem, QHBoxLayout, QCompleter)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QMenuBar, QMenu, QAction,
+                             QFormLayout, QLabel, QLineEdit, QDateEdit, QCheckBox,
+                             QPushButton, QRadioButton, QGridLayout, QHBoxLayout,
+                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem)
 import database
 from datetime import date
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QDate, QSize
 from base_class import BaseWindow
+from bill import BillEntry
 
 
 class MasterEntry(BaseWindow):
@@ -22,7 +23,32 @@ class MasterEntry(BaseWindow):
         self.current_row = None
         self.setWindowTitle("Master Entry - Add")
 
+    def switch_to_master(self):
+        pass  # Do nothing since we are already in the master page
+
+    def switch_to_bill(self):
+        self.close()
+        self.bill_page = BillPage()
+        self.bill_page.show()
+
     def init_ui(self):
+        main_layout = QVBoxLayout(self)  # Main layout for the widget
+
+        # Create Menu Bar
+        menuBar = QMenuBar()
+        # masterAction = QAction("Master ", self)
+        billAction = QAction(" Bill ", self)
+
+        # menuBar.addAction(masterAction)
+        menuBar.addAction(billAction)
+
+        # Connect signals to slots
+        # masterAction.triggered.connect(self.switch_to_master)
+        billAction.triggered.connect(self.switch_to_bill)
+
+        # Add menu bar to the main layout
+        main_layout.addWidget(menuBar)
+
         layout = QFormLayout()
 
         # --------------------------- HOUSE NUMBER --------------------------- #
@@ -45,7 +71,7 @@ class MasterEntry(BaseWindow):
         self.notes_input = QLineEdit(self)
         self.male_rb = QRadioButton("Male", self)
         self.female_rb = QRadioButton("Female", self)
-        # self.others_rb = QRadioButton("Others", self)
+        self.others_rb = QRadioButton("Others", self)
 
         # --------------------------- SUBMIT BUTTON --------------------------- #
         self.submit_btn = QPushButton("Submit", self)
@@ -71,7 +97,7 @@ class MasterEntry(BaseWindow):
         gender_layout = QGridLayout()
         gender_layout.addWidget(self.male_rb, 0, 0)
         gender_layout.addWidget(self.female_rb, 0, 1)
-        # gender_layout.addWidget(self.others_rb, 0, 2)
+        gender_layout.addWidget(self.others_rb, 0, 2)
         layout.addRow(QLabel("Tenant Gender"), gender_layout)
 
         button_layout = QHBoxLayout()
@@ -89,6 +115,7 @@ class MasterEntry(BaseWindow):
         self.populate_table()
 
         self.setLayout(layout)
+        main_layout.addLayout(layout)
 
     def setup_combobox(self, data_function):
         combo = QComboBox(self)
@@ -127,12 +154,16 @@ class MasterEntry(BaseWindow):
             else:
                 tenant_dod = self.tenant_dod_input.date().toString("yyyy-MM-dd")
             notes = self.notes_input.text()
-            tenant_gender = "Male" if self.male_rb.isChecked() else "Female"
+            if self.male_rb.isChecked():
+                tenant_gender = "Male"
+            elif self.female_rb.isChecked():
+                tenant_gender = "Female"
+            else:
+                tenant_gender = "Others"
 
             if self.operation == "insert":
                 status, message = database.insert_master_entry(house_number, cts_number, room_number, tenant_name,
                                                                tenant_mobile, tenant_dod, notes, tenant_gender)
-                print(status, message)
                 if status:
                     QMessageBox.information(self, "Success", "Data Inserted Successfully!")
                     self.clear_form()
@@ -223,8 +254,13 @@ class MasterEntry(BaseWindow):
                             (self.cts_number_combo.currentText(), "CTS Number"),
                             (self.tenant_name_input.text(), "Tenant Name")]
 
-        if self.male_rb.isChecked() or self.female_rb.isChecked():
-            gender = "Male" if self.male_rb.isChecked() else "Female"
+        if self.male_rb.isChecked() or self.female_rb.isChecked() or self.others_rb.isChecked():
+            if self.male_rb.isChecked():
+                gender = "Male"
+            elif self.female_rb.isChecked():
+                gender = "Female"
+            else:
+                gender = "Others"
         else:
             gender = ""
 
@@ -270,8 +306,10 @@ class MasterEntry(BaseWindow):
         self.notes_input.setText(notes)
         if tenant_gender == "Male":
             self.male_rb.setChecked(True)
-        else:
+        elif tenant_gender == 'Female':
             self.female_rb.setChecked(True)
+        else:
+            self.others_rb.setChecked(True)
 
         self.operation = "update"
         self.current_row = row

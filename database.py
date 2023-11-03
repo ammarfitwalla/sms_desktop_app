@@ -318,7 +318,7 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                 old_room_id = get_room_id_by_room_number_cts_id_house_id(cursor, old_room_number, old_cts_id,
                                                                          old_house_id)
 
-                cursor.execute("UPDATE Rooms SET cts_id=%s WHERE room_id=%s",(new_cts_id, old_room_id))
+                cursor.execute("UPDATE Rooms SET cts_id=%s WHERE room_id=%s", (new_cts_id, old_room_id))
 
                 tenant_data = {
                     "tenant_name": tenant_name or None,
@@ -427,3 +427,31 @@ def delete_master_entry(old_house_number, old_cts_number, old_room_number):
     connection.commit()
     cursor.close()
     connection.close()
+
+
+def get_house_data():
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT house_number, house_id FROM Houses"
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    connection.close()
+    return [[item[0], item[1]] for item in results]
+
+
+def get_rooms_data_by_house_id(house_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT room_number, room_id FROM Rooms WHERE house_id=%s"
+    cursor.execute(query, (house_id,))
+    results = cursor.fetchall()
+
+    connection.close()
+    return [[item[0], item[1]] for item in results]
+
+
+def get_cts_number_by_room_number(room_number):
+    pass

@@ -11,6 +11,7 @@ if __name__ == '__main__':
     # if login_window.exec_() == LoginApp.Accepted:  # If login is successful
     master_entry_window.show()
 
+
     app.exec_()
     
 
