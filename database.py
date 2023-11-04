@@ -64,6 +64,7 @@ def get_all_master_entries():
         JOIN Rooms r ON t.room_id = r.room_id
         JOIN CTS c ON r.cts_id = c.cts_id
         JOIN Houses h ON c.house_id = h.house_id
+        WHERE t.current_tenant = 'True'
         ORDER BY t.tenant_id DESC
     """
     cursor.execute(query)
@@ -178,7 +179,8 @@ def update_tenant_info(cursor, tenant_data, room_id):
             tenant_dod = %s,
             tenant_gender = %s,
             notes = %s
-        WHERE room_id = %s
+        WHERE current_tenant = %s
+        AND room_id = %s
     """
     cursor.execute(query, list(tenant_data.values()) + [room_id])
 
@@ -210,7 +212,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                     "tenant_mobile": tenant_mobile or None,
                     "tenant_dod": tenant_dod,
                     "tenant_gender": tenant_gender or None,
-                    "notes": notes or None
+                    "notes": notes or None,
+                    "current_tenant": "True"
                 }
 
                 update_tenant_info(cursor, tenant_data, old_room_id)
@@ -243,7 +246,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                     "tenant_mobile": tenant_mobile or None,
                     "tenant_dod": tenant_dod,
                     "tenant_gender": tenant_gender or None,
-                    "notes": notes or None
+                    "notes": notes or None,
+                    "current_tenant": "True"
                 }
 
                 update_tenant_info(cursor, tenant_data, old_room_id)
@@ -269,7 +273,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                         "tenant_mobile": tenant_mobile or None,
                         "tenant_dod": tenant_dod,
                         "tenant_gender": tenant_gender or None,
-                        "notes": notes or None
+                        "notes": notes or None,
+                        "current_tenant": "True"
                     }
 
                     update_tenant_info(cursor, tenant_data, old_room_id)
@@ -295,7 +300,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                             "tenant_mobile": tenant_mobile or None,
                             "tenant_dod": tenant_dod,
                             "tenant_gender": tenant_gender or None,
-                            "notes": notes or None
+                            "notes": notes or None,
+                            "current_tenant": "True"
                         }
 
                         update_tenant_info(cursor, tenant_data, old_room_id)
@@ -325,7 +331,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                     "tenant_mobile": tenant_mobile or None,
                     "tenant_dod": tenant_dod,
                     "tenant_gender": tenant_gender or None,
-                    "notes": notes or None
+                    "notes": notes or None,
+                    "current_tenant": "True"
                 }
 
                 update_tenant_info(cursor, tenant_data, old_room_id)
@@ -350,7 +357,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                         "tenant_mobile": tenant_mobile or None,
                         "tenant_dod": tenant_dod,
                         "tenant_gender": tenant_gender or None,
-                        "notes": notes or None
+                        "notes": notes or None,
+                        "current_tenant": "True"
                     }
 
                     update_tenant_info(cursor, tenant_data, old_room_id)
@@ -379,7 +387,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                     "tenant_mobile": tenant_mobile or None,
                     "tenant_dod": tenant_dod,
                     "tenant_gender": tenant_gender or None,
-                    "notes": notes or None
+                    "notes": notes or None,
+                    "current_tenant": "True"
                 }
 
                 update_tenant_info(cursor, tenant_data, old_room_id)
@@ -418,11 +427,16 @@ def delete_master_entry(old_house_number, old_cts_number, old_room_number):
     room_id = cursor.fetchone()[0]
 
     # Deleting the tenant based on room_id
-    tenant_query = "DELETE FROM Tenants WHERE room_id = %s"
-    cursor.execute(tenant_query, (room_id,))
+    tenant_query = "DELETE FROM Tenants WHERE room_id = %s AND current_tenant = %s"
+    cursor.execute(tenant_query, (room_id, 'True'))
 
-    room_query = "DELETE FROM Rooms WHERE room_id = %s"
-    cursor.execute(room_query, (room_id,))
+    tenant_count_query = "SELECT count(*) FROM Tenants WHERE room_id = %s"
+    cursor.execute(tenant_count_query, (room_id,))
+    tenant_count = cursor.fetchone()[0]
+
+    if not tenant_count:
+        room_query = "DELETE FROM Rooms WHERE room_id = %s"
+        cursor.execute(room_query, (room_id,))
 
     connection.commit()
     cursor.close()

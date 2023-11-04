@@ -11,16 +11,22 @@ class BillEntry(BaseWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.set_default_state()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+
+    def set_default_state(self):
+        self.operation = "insert"
+        self.current_row = None
+        self.setWindowTitle("Bill Entry - Add")
 
     def init_ui(self):
         layout = QGridLayout()
         self.setLayout(layout)
 
         # Row 2
-        self.rent_month_label = QLabel('Rent For Month Of')
+        self.rent_month_label = QLabel('Bill For Month Of')
         self.rent_month_date = QDateEdit()
-        self.rent_month_date.setDisplayFormat('MMMM yyyy')
+        self.rent_month_date.setDisplayFormat('MMM-yyyy')
         self.rent_month_date.setDate(QDate.currentDate())
         layout.addWidget(self.rent_month_label, 0, 0)
         layout.addWidget(self.rent_month_date, 0, 1)  # Spanning across two columns for space
@@ -70,11 +76,11 @@ class BillEntry(BaseWindow):
         # Row 5
         self.rent_from_label = QLabel('Rent From')
         self.rent_from_date = QDateEdit()
-        self.rent_from_date.setDisplayFormat('MMMM yyyy')
+        self.rent_from_date.setDisplayFormat('MMM-yyyy')
         self.rent_from_date.setDate(QDate.currentDate())
         self.rent_to_label = QLabel('Rent To')
         self.rent_to_date = QDateEdit()
-        self.rent_to_date.setDisplayFormat('MMMM yyyy')
+        self.rent_to_date.setDisplayFormat('MMM-yyyy')
         self.rent_to_date.setDate(QDate.currentDate())
         self.rent_to_date.setReadOnly(True)
         layout.addWidget(self.rent_from_label, 2, 2)
@@ -141,9 +147,14 @@ class BillEntry(BaseWindow):
         buttons_layout = QHBoxLayout()
 
         # Create Submit Button
-        self.submit_button = QPushButton('Submit')
+        self.submit_button = QPushButton('Save')
         self.submit_button.clicked.connect(self.submit_data)
         buttons_layout.addWidget(self.submit_button)
+
+        # Create Clear Button
+        self.print_button = QPushButton('Clear')
+        # self.print_button.clicked.connect(self.print_data)  # You need to define the print_data method
+        buttons_layout.addWidget(self.print_button)
 
         # Create Print Button
         self.print_button = QPushButton('Print')
@@ -154,16 +165,17 @@ class BillEntry(BaseWindow):
         layout.addLayout(buttons_layout, 7, 1, 1, 5)  # Assuming row 7 is where you want the buttons
 
         self.bill_entry_table = QTableWidget(self)
-        self.bill_entry_table.setColumnCount(10)  # Number of columns based on the fields you have
-        self.bill_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "Name",
-                                                         "Mobile", "DoD", "Notes", "Gender", "Edit", "Delete"])
+        self.bill_table_columns = ["House No.", "Room No.", "CTS No.", "Name",
+                                   "Mobile", "DoD", "Gender", "Bill Month", "Book No.",
+                                   "Bill No.", "Purpose For", "Rent From", "Rent To",
+                                   "@", "Total Month(s)", "Total Rupees", "Received Date",
+                                   "Extra Payment", "Agreement Date", "Notes", "Edit", "Delete"]
+        self.bill_entry_table.setColumnCount(
+            len(self.bill_table_columns))  # Number of columns based on the fields you have
+        self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
         layout.addWidget(self.bill_entry_table, 8, 0, 1, 6)
 
     def update_rent_to_date(self):
-        """
-        Slot to handle the dateChanged signal of the rent_month_date.
-        It sets the date of rent_to_date to be the same as the rent_month_date.
-        """
         rent_month_date = self.rent_month_date.date()
         self.rent_to_date.setDate(rent_month_date)
 
@@ -223,7 +235,6 @@ class BillEntry(BaseWindow):
 
     def submit_data(self):
         # List of mandatory fields as (QLineEdit, Field Name) pairs
-        print('in submit data')
         mandatory_fields = [
             (self.house_number_combo, "House Number"),
             (self.room_number_combo, "Room Number"),
