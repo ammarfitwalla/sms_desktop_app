@@ -121,11 +121,11 @@ def insert_room(cursor, house_id, cts_id, room_number):
         return None
 
 
-def insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id):
+def insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, current_tenant, room_id):
     cursor.execute("""
-        INSERT INTO Tenants (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id))
+        INSERT INTO Tenants (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, current_tenant, room_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """, (tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, current_tenant, room_id))
 
 
 def insert_master_entry(house_number, cts_number, room_number, tenant_name, tenant_mobile, tenant_dod, notes,
@@ -138,7 +138,8 @@ def insert_master_entry(house_number, cts_number, room_number, tenant_name, tena
         room_id = insert_room(cursor, house_id, cts_id, room_number)
         if room_id is None:
             return False, "Room already exists for this house and CTS."
-        insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, room_id)
+        current_tenant = "True"
+        insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, current_tenant, room_id)
         connection.commit()
         return True, "Success"
     except mysql.connector.Error as err:

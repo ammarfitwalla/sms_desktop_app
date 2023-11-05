@@ -1,10 +1,9 @@
 import sys
-
+from database import *
+from base_class import BaseWindow
 from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView
-from base_class import BaseWindow
-from database import *
 
 
 class BillEntry(BaseWindow):
@@ -306,7 +305,7 @@ class BillEntry(BaseWindow):
                 QMessageBox.warning(self, "Missing Data", f"Please enter the {field_name}.")
                 return
 
-        rent_month = self.rent_month_date.date().toString("MMMM yyyy")
+        rent_month = self.rent_month_date.date().toString("MMM yyyy")
         print(rent_month)
         house_number = self.house_number_combo.currentText()
         print(house_number)
