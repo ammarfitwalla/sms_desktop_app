@@ -139,8 +139,7 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.agreement_date, 4, 5)
 
         self.notes_label = QLabel('Notes')
-        self.notes_text = QTextEdit()
-        self.notes_text.setFixedHeight(50)  # Set the fixed height for the QTextEdit
+        self.notes_text = QLineEdit()
 
         # Add the QVBoxLayout to the main QGridLayout
         layout.addWidget(self.notes_label, 5, 0, 1, 5)
@@ -188,26 +187,26 @@ class BillEntry(BaseWindow):
         self.room_number_combo.setCurrentIndex(0)
 
         # Clear line edits
-        self.cts_number_line.clear()
-        self.room_changed()
         self.book_number_line.clear()
         self.bill_number_line.clear()
         self.purpose_line.clear()
         self.amount_line.clear()
-        self.total_months_line.clear()
         self.total_rupees_line.clear()
         self.extra_payment_line.clear()
+        self.notes_text.clear()
 
         # Reset the dates to current date
         current_date = QDate.currentDate()
         self.rent_month_date.setDate(current_date)
         self.rent_from_date.setDate(current_date)
-        self.rent_to_date.setDate(current_date)
         self.received_date.setDate(current_date)
         self.agreement_date.setDate(current_date)
 
-        # Clear the QTextEdit for notes
-        self.notes_text.clear()
+        # Update fields
+        self.room_changed()
+        self.update_rent_to_date()
+        self.update_total_months()
+        self.update_total_rupees()
 
     def calculate_next_numbers(self):
         # Get the latest numbers from the database
@@ -305,14 +304,38 @@ class BillEntry(BaseWindow):
                 QMessageBox.warning(self, "Missing Data", f"Please enter the {field_name}.")
                 return
 
-        rent_month = self.rent_month_date.date().toString("MMM yyyy")
-        print(rent_month)
+        rent_month = self.rent_month_date.date().toString("MMM-yyyy")
+        book_number = self.book_number_line.text()
+        bill_number = self.bill_number_line.text()
         house_number = self.house_number_combo.currentText()
-        print(house_number)
         room_number = self.room_number_combo.currentText()
-        print(room_number)
         cts_number = self.cts_number_line.text()
+        rent_from = self.rent_from_date.date().toString("MMM-yyyy")
+        rent_to = self.rent_to_date.date().toString("MMM-yyyy")
+        at_the_rate_of = self.amount_line.text()
+        total_months = self.total_months_line.text()
+        total_rupees = self.total_rupees_line.text()
+        received_date = self.received_date.date()
+        extra_payment = self.extra_payment_line.text()
+        agreement_date = self.agreement_date.date()
+        notes = self.notes_text.text()
+
+        print(rent_month)
+        print(book_number)
+        print(bill_number)
+        print(house_number)
+        print(room_number)
         print(cts_number)
+        print(rent_from)
+        print(rent_to)
+        print(at_the_rate_of)
+        print(total_months)
+        print(total_rupees)
+        print(received_date)
+        print(extra_payment)
+        print(agreement_date)
+        print(notes)
+
         # ... collect other input data ...
 
 
