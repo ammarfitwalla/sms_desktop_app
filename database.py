@@ -481,3 +481,31 @@ def get_cts_number_by_room_id(room_id):
 
     connection.close()
     return cts_number
+
+
+def get_latest_book_and_bill_numbers():
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    # Query to get the maximum bill_number for the maximum book_number
+    query = """
+    SELECT
+        book_number,
+        MAX(bill_number) AS max_bill_number
+    FROM 
+        Bill
+    WHERE 
+        book_number = (SELECT MAX(book_number) FROM Bill)
+    """
+
+    cursor.execute(query)
+    result = cursor.fetchone()
+    connection.close()
+
+    # Make sure to check that result is not None in case the table is empty
+    if result is None:
+        return 1, 1  # Assuming 0 as a starting point if there are no entries
+
+    max_book_number, max_bill_number = result
+    return max_book_number, max_bill_number
+

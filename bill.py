@@ -2,7 +2,7 @@ import sys
 
 from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
-    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox
+    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView
 from base_class import BaseWindow
 from database import *
 
@@ -36,6 +36,9 @@ class BillEntry(BaseWindow):
         self.book_number_line = QLineEdit()
         self.bill_number_label = QLabel('Bill Number')
         self.bill_number_line = QLineEdit()
+        # next_book_number, next_bill_number = self.calculate_next_numbers()
+        # self.book_number_line.setText(str(next_book_number))
+        # self.bill_number_line.setText(str(next_bill_number))
         layout.addWidget(self.book_number_label, 0, 2)
         layout.addWidget(self.book_number_line, 0, 3)
         layout.addWidget(self.bill_number_label, 0, 4)
@@ -152,9 +155,9 @@ class BillEntry(BaseWindow):
         buttons_layout.addWidget(self.submit_button)
 
         # Create Clear Button
-        self.print_button = QPushButton('Clear')
-        # self.print_button.clicked.connect(self.print_data)  # You need to define the print_data method
-        buttons_layout.addWidget(self.print_button)
+        self.clear_button = QPushButton('Clear')
+        self.clear_button.clicked.connect(self.clear_form)
+        buttons_layout.addWidget(self.clear_button)
 
         # Create Print Button
         self.print_button = QPushButton('Print')
@@ -165,15 +168,63 @@ class BillEntry(BaseWindow):
         layout.addLayout(buttons_layout, 7, 1, 1, 5)  # Assuming row 7 is where you want the buttons
 
         self.bill_entry_table = QTableWidget(self)
-        self.bill_table_columns = ["House No.", "Room No.", "CTS No.", "Name",
-                                   "Mobile", "DoD", "Gender", "Bill Month", "Book No.",
-                                   "Bill No.", "Purpose For", "Rent From", "Rent To",
-                                   "@", "Total Month(s)", "Total Rupees", "Received Date",
-                                   "Extra Payment", "Agreement Date", "Notes", "Edit", "Delete"]
-        self.bill_entry_table.setColumnCount(
-            len(self.bill_table_columns))  # Number of columns based on the fields you have
+        self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
+                                   "Rent\nFrom", "Rent\nTo", "@", "Total\nMonth(s)", "Total\nAmount",
+                                   "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
+                                   "Mobile", "DoD", "Agreement\nDate", "Gender", "Edit", "Delete"]
+        self.bill_entry_table.setColumnCount(len(self.bill_table_columns))
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
         layout.addWidget(self.bill_entry_table, 8, 0, 1, 6)
+        self.bill_entry_table.resizeColumnsToContents()
+
+        # Ensure that the table does not stretch beyond the minimum required width
+        self.bill_entry_table.setSizeAdjustPolicy(QTableWidget.AdjustToContents)
+
+        # Optionally, if you want the table to resize automatically when the contents change:
+        self.bill_entry_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    def clear_form(self):
+        # Reset combo boxes to the first index
+        self.house_number_combo.setCurrentIndex(0)
+        self.room_number_combo.setCurrentIndex(0)
+
+        # Clear line edits
+        self.cts_number_line.clear()
+        self.room_changed()
+        self.book_number_line.clear()
+        self.bill_number_line.clear()
+        self.purpose_line.clear()
+        self.amount_line.clear()
+        self.total_months_line.clear()
+        self.total_rupees_line.clear()
+        self.extra_payment_line.clear()
+
+        # Reset the dates to current date
+        current_date = QDate.currentDate()
+        self.rent_month_date.setDate(current_date)
+        self.rent_from_date.setDate(current_date)
+        self.rent_to_date.setDate(current_date)
+        self.received_date.setDate(current_date)
+        self.agreement_date.setDate(current_date)
+
+        # Clear the QTextEdit for notes
+        self.notes_text.clear()
+
+    def calculate_next_numbers(self):
+        # Get the latest numbers from the database
+        latest_book_number, latest_bill_number = get_latest_book_and_bill_numbers()
+
+        # Logic to determine the next book and bill number
+        if latest_bill_number == 100:
+            # If the bill number has reached 100, increment the book number and reset bill number to 1
+            next_book_number = latest_book_number + 1
+            next_bill_number = 1
+        else:
+            # Otherwise, just increment the bill number
+            next_book_number = latest_book_number
+            next_bill_number = latest_bill_number + 1
+
+        return next_book_number, next_bill_number
 
     def update_rent_to_date(self):
         rent_month_date = self.rent_month_date.date()
@@ -236,10 +287,12 @@ class BillEntry(BaseWindow):
     def submit_data(self):
         # List of mandatory fields as (QLineEdit, Field Name) pairs
         mandatory_fields = [
+            (self.book_number_line, "Book Number"),
+            (self.bill_number_line, "Bill Number"),
             (self.house_number_combo, "House Number"),
             (self.room_number_combo, "Room Number"),
-            (self.amount_line, "@"),
             (self.purpose_line, "Purpose For"),
+            (self.amount_line, "@"),
             # Add other mandatory fields here as necessary
         ]
 
