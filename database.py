@@ -163,6 +163,10 @@ def get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, hous
     return get_id_from_table(cursor, "Rooms", {"room_number": room_number, "cts_id": cts_id, "house_id": house_id})
 
 
+def get_tenant_id_by_room_id(cursor, room_id, current_tenant):
+    return get_id_from_table(cursor, "Tenants", {"room_id": room_id, "current_tenant": current_tenant})
+
+
 def get_id_from_table(cursor, table_name, conditions):
     id_column = f"{table_name[:-1].lower()}_id" if table_name.endswith("s") else f"{table_name.lower()}_id"
     query = f"SELECT {id_column} FROM {table_name} WHERE " + " AND ".join([f"{col}=%s" for col in conditions.keys()])
@@ -509,4 +513,122 @@ def get_latest_book_and_bill_numbers():
 
     max_book_number, max_bill_number = result
     return max_book_number, max_bill_number
+
+
+def get_last_from_and_to_dates(house_number, room_number, cts_number, operation):
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+
+        current_tenant = "True"
+        house_id = get_house_id_by_house_number(cursor, house_number)
+        cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
+        room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
+        tenant_id = get_tenant_id_by_room_id(cursor, room_id, current_tenant)
+
+        if operation == 'insert':
+            subquery = "(SELECT MAX(bill_id) FROM bills WHERE tenant_id = %s)"
+        elif operation == 'update':
+            subquery = "(SELECT bill_id FROM bills WHERE tenant_id = %s ORDER BY bill_id DESC LIMIT 1 OFFSET 1)"
+        else:
+            raise ValueError("Invalid operation type")
+
+        query = (
+            "SELECT rent_from, rent_to "
+            "FROM bills "
+            "WHERE tenant_id = %s "
+            f"AND bill_id = {subquery}"
+        )
+        cursor.execute(query, (tenant_id, tenant_id))
+        result = cursor.fetchall()
+        connection.close()
+
+        if not result:
+            return None, None
+
+        previous_rent_from_date, previous_rent_to_date = result[0]
+
+        return previous_rent_from_date, previous_rent_to_date
+
+    except mysql.connector.Error as err:
+        print(str(err))
+        return None, None
+
+
+
+def insert_bill_entry(rent_month, book_number, bill_number, house_number, room_number, cts_number, purpose_for,
+                      rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
+                      received_date, extra_payment, agreement_date, notes):
+
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    try:
+        current_tenant = "True"
+        house_id = get_house_id_by_house_number(cursor, house_number)
+        cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
+        room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
+        tenant_id = get_tenant_id_by_room_id(cursor, room_id, current_tenant)
+        insert_query = """
+            INSERT INTO BILLS (bill_for_month_of, book_number, bill_number, purpose_for, rent_from, rent_to,
+            at_the_rate_of, total_months, total_rupees, received_date, extra_payment, agreement_date, notes, tenant_id) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_query, (rent_month, book_number, bill_number,
+                                      purpose_for, rent_from, rent_to, at_the_rate_of,
+                                      total_months, total_rupees, received_date, extra_payment,
+                                      agreement_date, notes, tenant_id))
+
+        connection.commit()
+        return True, "Success"
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        connection.rollback()
+        return False, f"Unable to insert data due to {err}"
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def get_bill_table_data():
+    connection = create_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+            SELECT
+            b.received_date AS "Received Date",
+            h.house_number AS "House No.",
+            r.room_number AS "Room No.",
+            c.cts_number AS "CTS No.",
+            t.tenant_name AS "Tenant Name",
+            b.rent_from AS "Rent From",
+            b.rent_to AS "Rent To",
+            b.at_the_rate_of AS "@",
+            b.total_months AS "Total Month(s)",
+            b.total_rupees AS "Total Amount",
+            b.book_number AS "Book No.",
+            b.bill_number AS "Bill No.",
+            b.extra_payment AS "Extra Payment",
+            b.purpose_for AS "Purpose For",
+            t.tenant_mobile AS "Mobile",
+            t.tenant_dod AS "DoD",
+            b.agreement_date AS "Agreement Date",
+            t.tenant_gender AS "Gender"
+        FROM
+            bills b
+        JOIN
+            tenants t ON b.tenant_id = t.tenant_id
+        JOIN
+            rooms r ON t.room_id = r.room_id
+        JOIN
+            cts c ON r.cts_id = c.cts_id
+        JOIN
+            houses h ON c.house_id = h.house_id;
+    """
+
+    cursor.execute(query)
+    result = cursor.fetchall()
+    connection.close()
+
+    return result
 

@@ -105,6 +105,7 @@ class MasterEntry(BaseWindow):
         button_layout.addWidget(self.submit_btn)
         button_layout.addWidget(self.clear_form_btn)
         layout.addRow(button_layout)
+
         layout.addRow(QLabel("Search"), self.search_bar)
         self.search_bar.textChanged.connect(self.filter_table)
 
