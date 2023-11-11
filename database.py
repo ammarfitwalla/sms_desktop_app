@@ -555,11 +555,9 @@ def get_last_from_and_to_dates(house_number, room_number, cts_number, operation)
         return None, None
 
 
-
 def insert_bill_entry(rent_month, book_number, bill_number, house_number, room_number, cts_number, purpose_for,
                       rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
                       received_date, extra_payment, agreement_date, notes):
-
     connection = create_connection()
     cursor = connection.cursor()
 
@@ -590,6 +588,72 @@ def insert_bill_entry(rent_month, book_number, bill_number, house_number, room_n
         connection.close()
 
 
+def update_bill_entry(bill_id, rent_month, book_number, bill_number, purpose_for,
+                      rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
+                      received_date, extra_payment, agreement_date, notes):
+    print(rent_month)
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    try:
+        update_query = """
+            UPDATE bills 
+            SET bill_for_month_of = %s, 
+                book_number = %s, 
+                bill_number = %s, 
+                purpose_for = %s, 
+                rent_from = %s, 
+                rent_to = %s, 
+                at_the_rate_of = %s, 
+                total_months = %s, 
+                total_rupees = %s, 
+                received_date = %s, 
+                extra_payment = %s, 
+                agreement_date = %s, 
+                notes = %s 
+            WHERE bill_id = %s
+        """
+        cursor.execute(update_query, (rent_month, book_number, bill_number,
+                                      purpose_for, rent_from, rent_to, at_the_rate_of,
+                                      total_months, total_rupees, received_date, extra_payment,
+                                      agreement_date, notes, bill_id))
+
+        connection.commit()
+        return True, "Success"
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        connection.rollback()
+        return False, f"Unable to insert data due to {err}"
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def fetch_data_for_edit_record(bill_id):
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+
+        query = """
+            SELECT bill_for_month_of, notes
+            FROM bills
+            WHERE bill_id = %s
+        """
+        cursor.execute(query, (bill_id,))
+        result = cursor.fetchone()
+
+        connection.close()
+
+        if result:
+            return result
+        else:
+            return None, None
+
+    except mysql.connector.Error as err:
+        print("Error:", str(err))
+        return None, None
+
+
 def get_bill_table_data():
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
@@ -613,7 +677,8 @@ def get_bill_table_data():
             t.tenant_mobile AS "Mobile",
             t.tenant_dod AS "DoD",
             b.agreement_date AS "Agreement Date",
-            t.tenant_gender AS "Gender"
+            t.tenant_gender AS "Gender",
+            b.bill_id AS "Bill ID"
         FROM
             bills b
         JOIN
@@ -631,4 +696,3 @@ def get_bill_table_data():
     connection.close()
 
     return result
-

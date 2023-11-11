@@ -1,7 +1,6 @@
 import sys
 from datetime import datetime
 from datetime import date
-
 from database import *
 from base_class import BaseWindow
 from PyQt5.QtCore import QDate, Qt
@@ -20,6 +19,7 @@ class BillEntry(BaseWindow):
         self.operation = "insert"
         self.current_row = None
         self.setWindowTitle("Bill Entry - Add")
+        self.bill_id = None
 
     def init_ui(self):
         layout = QGridLayout()
@@ -220,7 +220,10 @@ class BillEntry(BaseWindow):
             # Populate the table with rows
             for row_number, row_data in enumerate(bill_entries):
                 self.bill_entry_table.insertRow(row_number)
+                tenant_id = row_data["Bill ID"]
                 for column_number, column_name in enumerate(column_names):
+                    if column_name == "Bill ID":
+                        continue
                     # Check for None and convert datetime.date to string
                     data = row_data.get(column_name, '')
                     if isinstance(data, date):
@@ -232,6 +235,7 @@ class BillEntry(BaseWindow):
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                     self.bill_entry_table.setItem(row_number, column_number, item)
 
+                self.bill_entry_table.item(row_number, 0).setData(Qt.UserRole, tenant_id)
                 # Add 'Edit' and 'Delete' buttons
                 self.add_table_buttons(row_number)
 
@@ -279,6 +283,16 @@ class BillEntry(BaseWindow):
         purpose_for = self.bill_entry_table.item(row, PURPOSE_FOR_COL).text()
         agreement_date = self.bill_entry_table.item(row, AGREEMENT_DATE_COL).text()
 
+        bill_id_item = self.bill_entry_table.item(row, 0)  # Assuming bill_id is stored in the first column
+        self.bill_id = bill_id_item.data(Qt.UserRole) if bill_id_item else None
+
+        if self.bill_id:
+            rent_month_date, notes = fetch_data_for_edit_record(self.bill_id)
+            if rent_month_date:
+                self.rent_month_date.setDate(QDate.fromString(rent_month_date, 'MMM-yyyy'))
+            if notes:
+                self.notes_text.setText(notes)
+
         # Fill the form fields with the data
         self.received_date.setDate(QDate.fromString(received_date, 'yyyy-MM-dd'))
         self.rent_from_date.setDate(QDate.fromString(rent_from, 'MMM-yyyy'))
@@ -307,6 +321,7 @@ class BillEntry(BaseWindow):
         self.cts_number_line.setText(cts_no)
 
         self.operation = 'update'
+        self.setWindowTitle("Bill Entry - Edit")
 
     def delete_record(self, row):
         # Placeholder for the logic to delete a record
@@ -342,6 +357,9 @@ class BillEntry(BaseWindow):
         self.update_total_months()
         self.update_total_rupees()
         self.operation = 'insert'
+        self.bill_id = None
+        self.setWindowTitle("Bill Entry - Add")
+
 
     def calculate_next_numbers(self):
         # Get the latest numbers from the database
@@ -482,10 +500,17 @@ class BillEntry(BaseWindow):
             else:
                 QMessageBox.warning(self, "Error", str(message))
         else:
-            print(self.operation)
-            # TODO : Need to write update_bill_entry function
-            pass
+            status, message = update_bill_entry(self.bill_id, rent_month, book_number, bill_number, purpose_for,
+                                                rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
+                                                received_date, extra_payment, agreement_date, notes)
+            if status:
+                QMessageBox.information(self, "Success", "Bill Data Updated successfully!")
+                self.clear_form()
+            else:
+                QMessageBox.warning(self, "Error", str(message))
 
+        self.populate_table()
+        self.setWindowTitle("Bill Entry - Add")
         # print(rent_month)
         # print(book_number)
         # print(bill_number)
