@@ -5,7 +5,9 @@ from database import *
 from base_class import BaseWindow
 from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
-    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem
+    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
+    QMenuBar, QToolBar
+import master_entry
 
 
 class BillEntry(BaseWindow):
@@ -16,14 +18,37 @@ class BillEntry(BaseWindow):
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
     def set_default_state(self):
-        self.operation = "insert"
-        self.current_row = None
-        self.setWindowTitle("Bill Entry - Add")
         self.bill_id = None
+        self.current_row = None
+        self.operation = "insert"
+        self.setWindowTitle("Bill Entry - Add")
+
+    def switch_to_master(self):
+        self.close()
+        self.master_page = master_entry.MasterEntry()
+        self.master_page.show()
+        # Logic to switch to the Master page
+        print("Switching to Master")
+
+    def switch_to_bill(self):
+        # Logic to switch to the Bill page
+        print("Switching to Bill")
 
     def init_ui(self):
+        main_layout = QVBoxLayout(self)
+
+        # Create a toolbar
+        toolbar = QToolBar("Main Toolbar")
+        # Add 'Switch to Master' action
+        switch_to_master_action = QAction('Go to Master Entry', self)
+        switch_to_master_action.triggered.connect(self.switch_to_master)
+        toolbar.addAction(switch_to_master_action)
+        # Add the toolbar to the main layout
+        main_layout.addWidget(toolbar)
+
+        # Create a grid layout for the rest of the UI components
         layout = QGridLayout()
-        self.setLayout(layout)
+        main_layout.addLayout(layout)  # Add the grid layout to the main layout
 
         # Row 2
         self.rent_month_label = QLabel('Bill For Month Of')
@@ -177,10 +202,13 @@ class BillEntry(BaseWindow):
         self.search_bar.textChanged.connect(self.filter_table)
 
         self.bill_entry_table = QTableWidget(self)
+
+
         self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
                                    "Rent\nFrom", "Rent\nTo", "@", "Total\nMonth(s)", "Total\nAmount",
                                    "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
-                                   "Mobile", "DoD", "Agreement\nDate", "Gender", "Edit", "Delete"]
+                                   "Mobile", "DoD", "Agreement\nDate", "Gender", "Edit", "Print", "Delete"]
+
         self.bill_entry_table.setColumnCount(len(self.bill_table_columns))
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
         layout.addWidget(self.bill_entry_table, 9, 0, 1, 6)
@@ -191,6 +219,16 @@ class BillEntry(BaseWindow):
 
         # Optionally, if you want the table to resize automatically when the contents change:
         self.bill_entry_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.bill_entry_table.setShowGrid(True)  # Enable the display of grid lines between cells
+
+        # Use setStyleSheet to define the grid line color and style
+        self.bill_entry_table.setStyleSheet("gridline-color: rgb(192, 192, 192);")  # Light grey grid lines
+
+        # You can also set border styles for the headers if desired
+        self.bill_entry_table.horizontalHeader().setStyleSheet(
+            "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
+        self.bill_entry_table.verticalHeader().setStyleSheet(
+            "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
 
         self.populate_table()
 
@@ -242,12 +280,21 @@ class BillEntry(BaseWindow):
     def add_table_buttons(self, row):
         btn_edit = QPushButton('Edit')
         btn_edit.clicked.connect(lambda: self.edit_record(row))
-        self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 2, btn_edit)
+        self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 3, btn_edit)
+
+        # Print button
+        btn_print = QPushButton('Print')
+        btn_print.clicked.connect(lambda: self.print_record(row))
+        self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 2, btn_print)
 
         # Delete button
         btn_delete = QPushButton('Delete')
         btn_delete.clicked.connect(lambda: self.delete_record(row))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 1, btn_delete)
+
+    def print_record(self, row):
+        print(row)
+        pass
 
     def edit_record(self, row):
         # Assuming the column indices are set as follows, adjust if your table is different
@@ -324,8 +371,26 @@ class BillEntry(BaseWindow):
         self.setWindowTitle("Bill Entry - Edit")
 
     def delete_record(self, row):
-        # Placeholder for the logic to delete a record
-        print(f"Delete record at row {row}")
+        bill_id_item = self.bill_entry_table.item(row, 0)
+        bill_id = bill_id_item.data(Qt.UserRole) if bill_id_item else None
+
+        if bill_id is None:
+            QMessageBox.warning(self, "Error", "Could not find the bill ID for row.")
+            return
+
+        reply = QMessageBox.question(self, 'Delete Confirmation',
+                                     "Are you sure you want to delete this bill?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            success, message = delete_bill_by_id(bill_id)
+            if success:
+                QMessageBox.information(self, "Success", "Successfully deleted the record.")
+                self.populate_table()
+            else:
+                QMessageBox.warning(self, "Error", f"Error deleting the record: {message}")
+        else:
+            print("Deletion cancelled.")
 
     def clear_form(self):
         # Reset combo boxes to the first index
@@ -359,7 +424,6 @@ class BillEntry(BaseWindow):
         self.operation = 'insert'
         self.bill_id = None
         self.setWindowTitle("Bill Entry - Add")
-
 
     def calculate_next_numbers(self):
         # Get the latest numbers from the database
@@ -489,7 +553,6 @@ class BillEntry(BaseWindow):
         notes = self.notes_text.text()
 
         if self.operation == "insert":
-            print('before insert function')
             status, message = insert_bill_entry(rent_month, book_number, bill_number, house_number, room_number,
                                                 cts_number, purpose_for, rent_from, rent_to, at_the_rate_of,
                                                 total_months, total_rupees, received_date, extra_payment,

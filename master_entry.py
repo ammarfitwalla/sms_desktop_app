@@ -3,13 +3,13 @@ import os
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QMenuBar, QMenu, QAction,
                              QFormLayout, QLabel, QLineEdit, QDateEdit, QCheckBox,
                              QPushButton, QRadioButton, QGridLayout, QHBoxLayout,
-                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem)
+                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem, QToolBar)
 import database
 from datetime import date
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QDate, QSize
 from base_class import BaseWindow
-from bill import BillEntry
+import bill
 
 
 class MasterEntry(BaseWindow):
@@ -29,28 +29,25 @@ class MasterEntry(BaseWindow):
 
     def switch_to_bill(self):
         self.close()
-        self.bill_page = BillEntry()
+        self.bill_page = bill.BillEntry()
         self.bill_page.show()
 
     def init_ui(self):
-        main_layout = QVBoxLayout(self)  # Main layout for the widget
+        main_layout = QVBoxLayout(self)
 
-        # Create Menu Bar
-        menuBar = QMenuBar()
-        # masterAction = QAction("Master ", self)
-        billAction = QAction(" Bill ", self)
+        # Create a toolbar
+        toolbar = QToolBar("Main Toolbar")
+        # Add 'Switch to Master' action
+        switch_to_master_action = QAction('Go to Bill Entry', self)
+        switch_to_master_action.triggered.connect(self.switch_to_bill)
+        toolbar.addAction(switch_to_master_action)
+        # Add the toolbar to the main layout
+        main_layout.addWidget(toolbar)
 
-        # menuBar.addAction(masterAction)
-        menuBar.addAction(billAction)
-
-        # Connect signals to slots
-        # masterAction.triggered.connect(self.switch_to_master)
-        billAction.triggered.connect(self.switch_to_bill)
-
-        # Add menu bar to the main layout
-        main_layout.addWidget(menuBar)
-
+        # Create a grid layout for the rest of the UI components
+        # layout = QGridLayout()
         layout = QFormLayout()
+        main_layout.addLayout(layout)  # Add the grid layout to the main layout
 
         # --------------------------- HOUSE NUMBER --------------------------- #
         self.house_number_combo = self.setup_combobox(database.get_house_numbers)

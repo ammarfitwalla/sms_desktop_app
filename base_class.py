@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QMainWindow
 from PyQt5.QtGui import QFont
+
 
 class BaseWindow(QDialog):
     def __init__(self):
@@ -15,5 +16,5 @@ class BaseWindow(QDialog):
 
     def set_default_font(self):
         font = QFont()
-        font.setPointSize(12)  # You can adjust this value as needed
+        font.setPointSize(10)  # You can adjust this value as needed
         self.setFont(font)

@@ -696,3 +696,25 @@ def get_bill_table_data():
     connection.close()
 
     return result
+
+
+def delete_bill_by_id(bill_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+    try:
+        delete_query = "DELETE FROM bills WHERE bill_id = %s"
+        cursor.execute(delete_query, (bill_id,))
+
+        connection.commit()  # Committing the transaction
+        print(f"Bill with ID {bill_id} has been deleted.")
+
+        return True, 'Success'
+
+    except mysql.connector.Error as err:
+        print("Error:", str(err))
+        return False, str(err)
+
+    finally:
+        cursor.close()
+        connection.close()
+        print("MySQL connection is closed")
