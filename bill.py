@@ -203,7 +203,6 @@ class BillEntry(BaseWindow):
 
         self.bill_entry_table = QTableWidget(self)
 
-
         self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
                                    "Rent\nFrom", "Rent\nTo", "@", "Total\nMonth(s)", "Total\nAmount",
                                    "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
@@ -293,79 +292,97 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 1, btn_delete)
 
     def print_record(self, row):
-        print(row)
-        pass
+        data = self.get_data_from_row(row)
+        self.set_data_to_form(data)
+        # self.house_number_combo.setDisabled(True)
+        # self.room_number_combo.setDisabled(True)
+        self.make_form_readonly()
+        self.cts_number_line.setDisabled(True)
+        self.operation = 'print'
+        self.setWindowTitle("Bill Entry - Print")
 
-    def edit_record(self, row):
-        # Assuming the column indices are set as follows, adjust if your table is different
-        RECEIVED_DATE_COL = 0
-        HOUSE_NO_COL = 1
-        ROOM_NO_COL = 2
-        CTS_NO_COL = 3
-        RENT_FROM_COL = 5
-        RENT_TO_COL = 6
-        RATE_COL = 7
-        TOTAL_MONTHS_COL = 8
-        TOTAL_AMOUNT_COL = 9
-        BOOK_NO_COL = 10
-        BILL_NO_COL = 11
-        EXTRA_PAYMENT_COL = 12
-        PURPOSE_FOR_COL = 13
-        AGREEMENT_DATE_COL = 16
+    def make_form_readonly(self):
+        # Iterate over all the form fields to set them to read-only
+        for field in [self.received_date, self.rent_month_date, self.rent_from_date, self.rent_to_date,
+                      self.amount_line, self.total_months_line, self.total_rupees_line,
+                      self.book_number_line, self.bill_number_line, self.extra_payment_line,
+                      self.purpose_line, self.agreement_date, self.house_number_combo,
+                      self.room_number_combo, self.cts_number_line, self.notes_text]:
+            if isinstance(field, QComboBox):
+                field.setEnabled(False)
+            else:
+                field.setReadOnly(True)
+
+    def make_form_editable(self):
+        # Iterate over all the form fields to set them to editable
+        for field in [self.received_date, self.rent_month_date, self.rent_from_date, self.rent_to_date,
+                      self.amount_line, self.total_months_line, self.total_rupees_line,
+                      self.book_number_line, self.bill_number_line, self.extra_payment_line,
+                      self.purpose_line, self.agreement_date, self.house_number_combo,
+                      self.room_number_combo, self.cts_number_line, self.notes_text]:
+            if isinstance(field, QComboBox):
+                field.setEnabled(True)
+            elif isinstance(field, QDateEdit):
+                field.setReadOnly(False)
+            else:
+                field.setReadOnly(False)
+                field.setDisabled(False)
+
+    def get_data_from_row(self, row):
+        # Define column indices
+        columns = {'RECEIVED_DATE': 0, 'HOUSE_NO': 1, 'ROOM_NO': 2, 'CTS_NO': 3, 'RENT_FROM': 5, 'RENT_TO': 6,
+                   'RATE': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10, 'BILL_NO': 11, 'EXTRA_PAYMENT': 12,
+                   'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16, 'BILL_ID': 0}
 
         # Fetch the data from the table row
-        received_date_item = self.bill_entry_table.item(row, RECEIVED_DATE_COL)
-        received_date = received_date_item.text() if received_date_item is not None else ""
-        house_no = self.bill_entry_table.item(row, HOUSE_NO_COL).text()
-        room_no = self.bill_entry_table.item(row, ROOM_NO_COL).text()
-        cts_no = self.bill_entry_table.item(row, CTS_NO_COL).text()
-        rent_from = self.bill_entry_table.item(row, RENT_FROM_COL).text()
-        rent_to = self.bill_entry_table.item(row, RENT_TO_COL).text()
-        rate = self.bill_entry_table.item(row, RATE_COL).text()
-        total_months = self.bill_entry_table.item(row, TOTAL_MONTHS_COL).text()
-        total_amount = self.bill_entry_table.item(row, TOTAL_AMOUNT_COL).text()
-        book_no = self.bill_entry_table.item(row, BOOK_NO_COL).text()
-        bill_no = self.bill_entry_table.item(row, BILL_NO_COL).text()
-        extra_payment = self.bill_entry_table.item(row, EXTRA_PAYMENT_COL).text()
-        purpose_for = self.bill_entry_table.item(row, PURPOSE_FOR_COL).text()
-        agreement_date = self.bill_entry_table.item(row, AGREEMENT_DATE_COL).text()
+        data = {
+            key: self.bill_entry_table.item(row, col).text() if self.bill_entry_table.item(row, col) is not None else ""
+            for key, col in columns.items()}
 
-        bill_id_item = self.bill_entry_table.item(row, 0)  # Assuming bill_id is stored in the first column
-        self.bill_id = bill_id_item.data(Qt.UserRole) if bill_id_item else None
+        # Fetch the bill_id
+        data['BILL_ID'] = self.bill_entry_table.item(row, columns['BILL_ID']).data(
+            Qt.UserRole) if self.bill_entry_table.item(row, columns['BILL_ID']) else None
 
-        if self.bill_id:
-            rent_month_date, notes = fetch_data_for_edit_record(self.bill_id)
+        return data
+
+    def set_data_to_form(self, data):
+        # Fill the form fields with the data
+        self.received_date.setDate(QDate.fromString(data['RECEIVED_DATE'], 'yyyy-MM-dd'))
+        self.rent_from_date.setDate(QDate.fromString(data['RENT_FROM'], 'MMM-yyyy'))
+        self.rent_to_date.setDate(QDate.fromString(data['RENT_TO'], 'MMM-yyyy'))
+        self.amount_line.setText(data['RATE'])
+        self.total_months_line.setText(data['TOTAL_MONTHS'])
+        self.total_rupees_line.setText(data['TOTAL_AMOUNT'])
+        self.book_number_line.setText(data['BOOK_NO'])
+        self.bill_number_line.setText(data['BILL_NO'])
+        self.extra_payment_line.setText(data['EXTRA_PAYMENT'])
+        self.purpose_line.setText(data['PURPOSE_FOR'])
+        self.agreement_date.setDate(QDate.fromString(data['AGREEMENT_DATE'], 'yyyy-MM-dd'))
+
+        # Set comboboxes and line edits
+        house_index = self.house_number_combo.findText(data['HOUSE_NO'])
+        room_index = self.room_number_combo.findText(data['ROOM_NO'])
+        self.house_number_combo.setCurrentIndex(house_index)
+        self.room_number_combo.setCurrentIndex(room_index)
+        self.cts_number_line.setText(data['CTS_NO'])
+
+        # If additional data was fetched from the database
+        if data['BILL_ID']:
+            self.bill_id = data['BILL_ID']
+            rent_month_date, notes = fetch_data_for_edit_record(data['BILL_ID'])
             if rent_month_date:
                 self.rent_month_date.setDate(QDate.fromString(rent_month_date, 'MMM-yyyy'))
             if notes:
                 self.notes_text.setText(notes)
 
-        # Fill the form fields with the data
-        self.received_date.setDate(QDate.fromString(received_date, 'yyyy-MM-dd'))
-        self.rent_from_date.setDate(QDate.fromString(rent_from, 'MMM-yyyy'))
-        self.rent_to_date.setDate(QDate.fromString(rent_to, 'MMM-yyyy'))
-        self.amount_line.setText(rate)
-        self.total_months_line.setText(total_months)
-        self.total_rupees_line.setText(total_amount)
-        self.book_number_line.setText(book_no)
-        self.bill_number_line.setText(bill_no)
-        self.extra_payment_line.setText(extra_payment)
-        self.purpose_line.setText(purpose_for)
-        self.agreement_date.setDate(QDate.fromString(agreement_date, 'yyyy-MM-dd'))
-
-        # Disable the comboboxes and CTS number line edit as they should not be editable
+    def edit_record(self, row):
+        if self.operation == 'print':
+            self.make_form_editable()
+        data = self.get_data_from_row(row)
+        self.set_data_to_form(data)
         self.house_number_combo.setDisabled(True)
         self.room_number_combo.setDisabled(True)
         self.cts_number_line.setDisabled(True)
-
-        # Now find and set the indexes of the combo boxes, you would have the logic to find the index based on the value
-        # This is placeholder logic
-        house_index = self.house_number_combo.findText(house_no)
-        room_index = self.room_number_combo.findText(room_no)
-
-        self.house_number_combo.setCurrentIndex(house_index)
-        self.room_number_combo.setCurrentIndex(room_index)
-        self.cts_number_line.setText(cts_no)
 
         self.operation = 'update'
         self.setWindowTitle("Bill Entry - Edit")
@@ -393,10 +410,7 @@ class BillEntry(BaseWindow):
             print("Deletion cancelled.")
 
     def clear_form(self):
-        # Reset combo boxes to the first index
-        self.house_number_combo.setEnabled(True)
-        self.room_number_combo.setEnabled(True)
-        self.cts_number_line.setEnabled(True)
+        self.make_form_editable()
         self.house_number_combo.setCurrentIndex(0)
         self.room_number_combo.setCurrentIndex(0)
 

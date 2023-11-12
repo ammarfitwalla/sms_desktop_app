@@ -111,6 +111,17 @@ class MasterEntry(BaseWindow):
         self.master_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "Name",
                                                            "Mobile", "DoD", "Notes", "Gender", "Edit", "Delete"])
         layout.addRow(self.master_entry_table)
+        self.master_entry_table.setShowGrid(True)  # Enable the display of grid lines between cells
+
+        # Use setStyleSheet to define the grid line color and style
+        self.master_entry_table.setStyleSheet("gridline-color: rgb(192, 192, 192);")  # Light grey grid lines
+
+        # You can also set border styles for the headers if desired
+        self.master_entry_table.horizontalHeader().setStyleSheet(
+            "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
+        self.master_entry_table.verticalHeader().setStyleSheet(
+            "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
+
         self.populate_table()
 
         self.setLayout(layout)
