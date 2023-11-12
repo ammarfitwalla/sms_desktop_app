@@ -167,6 +167,10 @@ def get_tenant_id_by_room_id(cursor, room_id, current_tenant):
     return get_id_from_table(cursor, "Tenants", {"room_id": room_id, "current_tenant": current_tenant})
 
 
+def get_tenant_id_by_bill_id(cursor, bill_id):
+    return get_id_from_table(cursor, "Bills", {"bill_id": bill_id})
+
+
 def get_id_from_table(cursor, table_name, conditions):
     id_column = f"{table_name[:-1].lower()}_id" if table_name.endswith("s") else f"{table_name.lower()}_id"
     query = f"SELECT {id_column} FROM {table_name} WHERE " + " AND ".join([f"{col}=%s" for col in conditions.keys()])
@@ -718,3 +722,26 @@ def delete_bill_by_id(bill_id):
         cursor.close()
         connection.close()
         print("MySQL connection is closed")
+
+
+def get_tenant_name_by_bill_id(bill_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+    try:
+        tenant_id_query = "SELECT tenant_id FROM Bills WHERE bill_id = %s"
+        cursor.execute(tenant_id_query, (bill_id,))
+        tenant_id = cursor.fetchone()[0]
+        tenant_name_query = "SELECT tenant_name FROM Tenants WHERE tenant_id = %s"
+        cursor.execute(tenant_name_query, (tenant_id,))
+        tenant_name = cursor.fetchone()[0]
+        connection.close()
+        return tenant_name
+
+    except mysql.connector.Error as err:
+        print("Error:", str(err))
+        return False
+
+    finally:
+        cursor.close()
+        connection.close()
+

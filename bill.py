@@ -1,13 +1,14 @@
 import sys
-from datetime import datetime
-from datetime import date
+import master_entry
 from database import *
 from base_class import BaseWindow
 from PyQt5.QtCore import QDate, Qt
+from datetime import datetime, date
+from PyQt5.QtGui import QPainter, QImage, QFont
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
     QMenuBar, QToolBar
-import master_entry
 
 
 class BillEntry(BaseWindow):
@@ -27,12 +28,7 @@ class BillEntry(BaseWindow):
         self.close()
         self.master_page = master_entry.MasterEntry()
         self.master_page.show()
-        # Logic to switch to the Master page
         print("Switching to Master")
-
-    def switch_to_bill(self):
-        # Logic to switch to the Bill page
-        print("Switching to Bill")
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -187,8 +183,9 @@ class BillEntry(BaseWindow):
 
         # Create Print Button
         self.print_button = QPushButton('Print')
-        # self.print_button.clicked.connect(self.print_data)  # You need to define the print_data method
+        self.print_button.clicked.connect(self.print_data)  # You need to define the print_data method
         buttons_layout.addWidget(self.print_button)
+        self.print_button.setDisabled(True)
 
         layout.addLayout(buttons_layout, 7, 1, 1, 5)  # Assuming row 7 is where you want the buttons
 
@@ -294,12 +291,11 @@ class BillEntry(BaseWindow):
     def print_record(self, row):
         data = self.get_data_from_row(row)
         self.set_data_to_form(data)
-        # self.house_number_combo.setDisabled(True)
-        # self.room_number_combo.setDisabled(True)
         self.make_form_readonly()
         self.cts_number_line.setDisabled(True)
         self.operation = 'print'
         self.setWindowTitle("Bill Entry - Print")
+        self.print_button.setEnabled(True)
 
     def make_form_readonly(self):
         # Iterate over all the form fields to set them to read-only
@@ -378,6 +374,7 @@ class BillEntry(BaseWindow):
     def edit_record(self, row):
         if self.operation == 'print':
             self.make_form_editable()
+            self.print_button.setDisabled(True)
         data = self.get_data_from_row(row)
         self.set_data_to_form(data)
         self.house_number_combo.setDisabled(True)
@@ -411,6 +408,7 @@ class BillEntry(BaseWindow):
 
     def clear_form(self):
         self.make_form_editable()
+        self.print_button.setDisabled(True)
         self.house_number_combo.setCurrentIndex(0)
         self.room_number_combo.setCurrentIndex(0)
 
@@ -632,6 +630,114 @@ class BillEntry(BaseWindow):
                 return False
 
         return True
+
+    def print_data(self):
+        tenant_name = get_tenant_name_by_bill_id(self.bill_id)
+        received_date_with_ordinal, received_month, received_year = get_date_month_year(
+            self.received_date.date().toString("yyyy-MM-dd"))
+        agreement_date_with_ordinal, agreement_month, agreement_year = get_date_month_year(
+            self.agreement_date.date().toString("yyyy-MM-dd"))
+
+        data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
+                "book_number": self.book_number_line.text(),
+                "bill_number": self.bill_number_line.text(),
+                "purpose_for": self.purpose_line.text(),
+                "cts_number": self.cts_number_line.text(),
+                "house_number": self.house_number_combo.currentText(),
+                "room_number": self.room_number_combo.currentText(),
+                "tenant_name": tenant_name,
+                "rent_from_to": self.rent_from_date.date().toString(
+                    "MMM-yyyy") + " to " + self.rent_to_date.date().toString("MMM-yyyy"),
+                "total_rupees": self.total_rupees_line.text(),
+                "total_paise": "00.",
+                "@": "@",
+                "per_month": "per month",
+                "at_the_rate_of": "Rs. " + self.amount_line.text() + "/-",
+                "received_date_with_ordinal": received_date_with_ordinal,
+                "received_month": received_month,
+                "received_year": received_year,
+                # "agreement_date_with_ordinal": agreement_date_with_ordinal,
+                # "agreement_month": agreement_month,
+                # "agreement_year": agreement_year,
+                # "notes": self.notes_text.text()
+                }
+
+        bill_image_path = r'images/rr_bill.jpg'  # Replace with your image path
+        bill_image = QImage(bill_image_path)
+
+        # Draw text onto the image
+        painter = QPainter(bill_image)
+        painter.begin(bill_image)
+        painter.setFont(QFont('Arial', 35))  # Choose a suitable font and size
+
+        # Define positions for the text fields on the image (these will need to be adjusted)
+        positions = {
+            "rent_month": (600, 830),  # Position for "Bill for the month of"
+            "book_number": (1127, 830),  # Position for "Book No."
+            "bill_number": (1414, 830),  # Position for "Bill No."
+            "purpose_for": (235, 940),
+            "cts_number": (1127, 935),
+            "room_number": (600, 1050),
+            "house_number": (1127, 1050),
+            "tenant_name": (378, 1341),
+            "rent_from_to": (747, 1455),
+            "total_rupees": (1127, 1610),
+            "total_paise": (1483, 1610),
+            "@": (730, 1540),
+            "at_the_rate_of": (665, 1595),
+            "per_month": (665, 1640),
+            "received_date_with_ordinal": (993, 1850),
+            "received_month": (1260, 1850),
+            "received_year": (1493, 1850),
+            # "agreement_date_with_ordinal":,
+            # "agreement_month":,
+            # "agreement_year":,
+            # "notes":,
+        }
+
+        for key, value in data.items():
+            x, y = positions[key]
+            painter.drawText(x, y, value)
+            print(x, y, key)
+            print('text drawn')
+        painter.end()
+
+        output_image_path = r'output_bill/output_bill_image.png'  # Replace with your desired path
+        bill_image.save(output_image_path)
+
+        # Optionally, open the image using the default image viewer of the operating system
+        import os
+        os.startfile(output_image_path)
+
+        # # Print the image
+        # printer = QPrinter(QPrinter.HighResolution)
+        # printer.setPageSize(QPrinter.A4)
+        # printer.setColorMode(QPrinter.Color)
+        # printer.setFullPage(True)
+        #
+        # print_dialog = QPrintDialog(printer)
+        # if print_dialog.exec_() == QPrintDialog.Accepted:
+        #     painter = QPainter(printer)
+        #     painter.begin(printer)
+        #     rect = painter.viewport()
+        #     size = bill_image.size()
+        #     size.scale(rect.size(), Qt.KeepAspectRatio)
+        #     painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
+        #     painter.setWindow(bill_image.rect())
+        #     painter.drawImage(0, 0, bill_image)
+        #     painter.end()
+
+
+def get_date_month_year(user_date):
+    date_obj = datetime.strptime(user_date, "%Y-%m-%d")
+    day = int(date_obj.strftime("%d"))  # Convert day to an integer to remove leading zeros
+    if 4 <= day <= 20 or 24 <= day <= 30:
+        suffix = "th"
+    else:
+        suffix = ["st", "nd", "rd"][day % 10 - 1]
+
+    day_ordinal = str(day) + suffix
+    return day_ordinal, date_obj.strftime("%B"), date_obj.strftime("%Y")
 
 
 if __name__ == '__main__':
