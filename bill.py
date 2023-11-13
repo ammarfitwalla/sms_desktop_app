@@ -637,6 +637,9 @@ class BillEntry(BaseWindow):
             self.received_date.date().toString("yyyy-MM-dd"))
         agreement_date_with_ordinal, agreement_month, agreement_year = get_date_month_year(
             self.agreement_date.date().toString("yyyy-MM-dd"))
+        rent_from = convert_date_string(self.rent_from_date.date().toString("MMM-yyyy"))
+        rent_to = convert_date_string(self.rent_to_date.date().toString("MMM-yyyy"))
+        rent_from_to = rent_from + " to " + rent_to
 
         data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
@@ -646,8 +649,7 @@ class BillEntry(BaseWindow):
                 "house_number": self.house_number_combo.currentText(),
                 "room_number": self.room_number_combo.currentText(),
                 "tenant_name": tenant_name,
-                "rent_from_to": self.rent_from_date.date().toString(
-                    "MMM-yyyy") + " to " + self.rent_to_date.date().toString("MMM-yyyy"),
+                "rent_from_to": rent_from_to,
                 "total_rupees": self.total_rupees_line.text(),
                 "total_paise": "00.",
                 "@": "@",
@@ -656,10 +658,10 @@ class BillEntry(BaseWindow):
                 "received_date_with_ordinal": received_date_with_ordinal,
                 "received_month": received_month,
                 "received_year": received_year,
-                # "agreement_date_with_ordinal": agreement_date_with_ordinal,
-                # "agreement_month": agreement_month,
-                # "agreement_year": agreement_year,
-                # "notes": self.notes_text.text()
+                "agreement_date_with_ordinal": agreement_date_with_ordinal,
+                "agreement_month": agreement_month,
+                "agreement_year": agreement_year,
+                "notes": self.notes_text.text()
                 }
 
         bill_image_path = r'images/rr_bill.jpg'  # Replace with your image path
@@ -672,46 +674,64 @@ class BillEntry(BaseWindow):
 
         # Define positions for the text fields on the image (these will need to be adjusted)
         positions = {
-            "rent_month": (600, 830),  # Position for "Bill for the month of"
-            "book_number": (1127, 830),  # Position for "Book No."
-            "bill_number": (1414, 830),  # Position for "Bill No."
+            "rent_month": (600, 830),
+            "book_number": (1135, 830),
+            "bill_number": (1483, 830),
             "purpose_for": (235, 940),
-            "cts_number": (1127, 935),
-            "room_number": (600, 1050),
-            "house_number": (1127, 1050),
-            "tenant_name": (378, 1341),
-            "rent_from_to": (747, 1455),
-            "total_rupees": (1127, 1610),
-            "total_paise": (1483, 1610),
+            "cts_number": (1135, 940),
+            "room_number": (600, 1055),
+            "house_number": (1135, 1055),
+            "tenant_name": (378, 1355),
+            "rent_from_to": (747, 1465),
+            "total_rupees": (1127, 1625),
+            "total_paise": (1483, 1625),
             "@": (730, 1540),
             "at_the_rate_of": (665, 1595),
             "per_month": (665, 1640),
             "received_date_with_ordinal": (993, 1850),
             "received_month": (1260, 1850),
             "received_year": (1493, 1850),
-            # "agreement_date_with_ordinal":,
-            # "agreement_month":,
-            # "agreement_year":,
-            # "notes":,
-        }
+            "agreement_date_with_ordinal": (490, 2160),
+            "agreement_month": (697, 2160),
+            "agreement_year": (956, 2160),
+            "notes": (390, 2470)}
 
         for key, value in data.items():
             x, y = positions[key]
             painter.drawText(x, y, value)
             print(x, y, key)
             print('text drawn')
-        painter.end()
 
-        output_image_path = r'output_bill/output_bill_image.png'  # Replace with your desired path
-        bill_image.save(output_image_path)
+        printer = QPrinter(QPrinter.HighResolution)
+        printer.setPageSize(QPrinter.PageSize.A5)
+        printer.setColorMode(QPrinter.Color)
+        printer.setFullPage(False)
+        printer.setOutputFormat(QPrinter.NativeFormat)
 
-        # Optionally, open the image using the default image viewer of the operating system
-        import os
-        os.startfile(output_image_path)
+        # Assuming the printer is already set up correctly, start painting directly
+        painter = QPainter()
+        if painter.begin(printer):
+            rect = painter.viewport()
+            size = bill_image.size()
+            size.scale(rect.size(), Qt.KeepAspectRatio)
+            painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
+            painter.setWindow(bill_image.rect())
+            painter.drawImage(0, 0, bill_image)
+            painter.end()
+        else:
+            print("Failed to start painting on printer.")
 
-        # # Print the image
+        print(f"Printer name: {printer.printerName()}")
+        print(f"Page size: {printer.pageSize()}")
+        print(f"Page rect: {printer.pageRect()}")
+        print(f"Resolution: {printer.resolution()} DPI")
+        print(f"Color mode: {'Color' if printer.colorMode() == QPrinter.Color else 'Grayscale'}")
+        print(f"Is full page: {printer.fullPage()}")
+        print(f"Output format: {printer.outputFormat()}")
+
+        # Print the image
         # printer = QPrinter(QPrinter.HighResolution)
-        # printer.setPageSize(QPrinter.A4)
+        # printer.setPageSize(QPrinter.A5)
         # printer.setColorMode(QPrinter.Color)
         # printer.setFullPage(True)
         #
@@ -738,6 +758,15 @@ def get_date_month_year(user_date):
 
     day_ordinal = str(day) + suffix
     return day_ordinal, date_obj.strftime("%B"), date_obj.strftime("%Y")
+
+
+def convert_date_string(date_string):
+    try:
+        date_obj = datetime.strptime(date_string, "%b-%Y")
+        formatted_date = date_obj.strftime("%B %Y")
+        return formatted_date
+    except ValueError:
+        return None  # Handle invalid date strings gracefully
 
 
 if __name__ == '__main__':
