@@ -65,7 +65,7 @@ def get_all_master_entries():
         JOIN CTS c ON r.cts_id = c.cts_id
         JOIN Houses h ON c.house_id = h.house_id
         WHERE t.current_tenant = 'True'
-        ORDER BY t.tenant_id DESC
+        ORDER BY h.house_number ASC, r.room_number ASC, t.tenant_id DESC
     """
     cursor.execute(query)
     results = cursor.fetchall()
@@ -689,7 +689,7 @@ def get_bill_table_data():
         JOIN
             houses h ON c.house_id = h.house_id
         ORDER BY
-            h.house_number ASC, b.bill_id DESC;
+            h.house_number ASC, r.room_number ASC, b.bill_id DESC;
     """
 
     cursor.execute(query)
