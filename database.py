@@ -559,18 +559,13 @@ def get_last_from_and_to_dates(house_number, room_number, cts_number, operation)
         return None, None
 
 
-def insert_bill_entry(rent_month, book_number, bill_number, house_number, room_number, cts_number, purpose_for,
-                      rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
-                      received_date, extra_payment, agreement_date, notes):
+def insert_bill_entry(rent_month, book_number, bill_number, purpose_for, rent_from, rent_to, at_the_rate_of,
+                      total_months, total_rupees, received_date, extra_payment, agreement_date, notes,
+                      tenant_id):
     connection = create_connection()
     cursor = connection.cursor()
 
     try:
-        current_tenant = "True"
-        house_id = get_house_id_by_house_number(cursor, house_number)
-        cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
-        room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
-        tenant_id = get_tenant_id_by_room_id(cursor, room_id, current_tenant)
         insert_query = """
             INSERT INTO BILLS (bill_for_month_of, book_number, bill_number, purpose_for, rent_from, rent_to,
             at_the_rate_of, total_months, total_rupees, received_date, extra_payment, agreement_date, notes, tenant_id) 
@@ -692,7 +687,9 @@ def get_bill_table_data():
         JOIN
             cts c ON r.cts_id = c.cts_id
         JOIN
-            houses h ON c.house_id = h.house_id;
+            houses h ON c.house_id = h.house_id
+        ORDER BY
+            h.house_number ASC, b.bill_id DESC;
     """
 
     cursor.execute(query)
@@ -745,3 +742,32 @@ def get_tenant_name_by_bill_id(bill_id):
         cursor.close()
         connection.close()
 
+
+def get_tenants_data_by_room_id(room_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT tenant_name, tenant_id FROM Tenants WHERE room_id=%s AND current_tenant=%s"
+    current_tenant = 'True'
+    cursor.execute(query, (room_id, current_tenant))
+    results = cursor.fetchone()
+
+    connection.close()
+    return results[0], results[1]
+
+
+def get_room_data_by_tenant_id(tenant_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT room_id FROM Tenants WHERE tenant_id=%s AND current_tenant=%s"
+    current_tenant = 'True'
+    cursor.execute(query, (tenant_id, current_tenant))
+    room_id = cursor.fetchone()[0]
+
+    room_name_query = "SELECT DISTINCT room_number FROM Rooms WHERE room_id=%s"
+    cursor.execute(room_name_query, (room_id,))
+    room_name = cursor.fetchone()[0]
+
+    connection.close()
+    return room_name, room_id

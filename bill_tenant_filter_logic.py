@@ -14,8 +14,8 @@ from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit,
 class BillEntry(BaseWindow):
     def __init__(self):
         super().__init__()
-        self.init_ui()
         self.set_default_state()
+        self.init_ui()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
     def set_default_state(self):
@@ -23,6 +23,7 @@ class BillEntry(BaseWindow):
         self.current_row = None
         self.operation = "insert"
         self.setWindowTitle("Bill Entry - Add")
+        self.room_change = True
 
     def switch_to_master(self):
         self.close()
@@ -83,12 +84,10 @@ class BillEntry(BaseWindow):
 
         self.populate_houses_dropdown()  # This function populates the house_number_combo
         self.house_number_combo.currentIndexChanged.connect(self.house_changed)
-        self.tenant_name_combo.currentIndexChanged.connect(self.tenant_changed)
         self.room_number_combo.currentIndexChanged.connect(self.room_changed)
 
         # Explicitly calling house_changed to update room and CTS fields based on the initially displayed house
         self.house_changed()
-        self.tenant_changed()
         layout.addWidget(self.house_number_label, 1, 0)
         layout.addWidget(self.house_number_combo, 1, 1)
         layout.addWidget(self.room_number_label, 1, 2)
@@ -96,12 +95,11 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.cts_number_label, 1, 4)
         layout.addWidget(self.cts_number_line, 1, 5)
         layout.addWidget(self.tenant_name_label, 2, 0)
-        layout.addWidget(self.tenant_name_combo, 2, 1, 1, 3)
+        layout.addWidget(self.tenant_name_combo, 2, 1)
 
         # Row 4
         self.purpose_label = QLabel('Purpose For')
         self.purpose_line = QLineEdit()
-        self.purpose_line.setText("For Residence")
         # self.purpose_line.setText('For Residence')
         layout.addWidget(self.purpose_label, 3, 0)
         layout.addWidget(self.purpose_line, 3, 1)
@@ -159,7 +157,6 @@ class BillEntry(BaseWindow):
         # Row 10
         self.extra_payment_label = QLabel('Extra Payment')
         self.extra_payment_line = QLineEdit()
-        self.extra_payment_line.setText(str(0))
         layout.addWidget(self.extra_payment_label, 5, 2)
         layout.addWidget(self.extra_payment_line, 5, 3)
 
@@ -216,14 +213,14 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.setColumnCount(len(self.bill_table_columns))
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
         layout.addWidget(self.bill_entry_table, 9, 0, 1, 6)
+        self.bill_entry_table.resizeColumnsToContents()
 
         # Ensure that the table does not stretch beyond the minimum required width
         self.bill_entry_table.setSizeAdjustPolicy(QTableWidget.AdjustToContents)
 
         # Optionally, if you want the table to resize automatically when the contents change:
         self.bill_entry_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.bill_entry_table.horizontalHeader().setStretchLastSection(
-            True)  # Stretch the last column to fill the space
+        self.bill_entry_table.setShowGrid(True)  # Enable the display of grid lines between cells
 
         # Use setStyleSheet to define the grid line color and style
         self.bill_entry_table.setStyleSheet("gridline-color: rgb(192, 192, 192);")  # Light grey grid lines
@@ -233,10 +230,8 @@ class BillEntry(BaseWindow):
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
         self.bill_entry_table.verticalHeader().setStyleSheet(
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
-        self.bill_entry_table.verticalHeader().setVisible(False)  # Hide the vertical header
 
         self.populate_table()
-        self.update_total_months()
 
     def filter_table(self):
         search_term = self.search_bar.text().lower()
@@ -313,12 +308,9 @@ class BillEntry(BaseWindow):
                       self.amount_line, self.total_months_line, self.total_rupees_line,
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
-                      self.room_number_combo, self.tenant_name_combo, self.cts_number_line, self.notes_text,
-                      self.submit_button]:
+                      self.room_number_combo, self.cts_number_line, self.notes_text]:
             if isinstance(field, QComboBox):
                 field.setEnabled(False)
-            elif isinstance(field, QPushButton):
-                field.setDisabled(True)
             else:
                 field.setReadOnly(True)
 
@@ -328,23 +320,20 @@ class BillEntry(BaseWindow):
                       self.amount_line, self.total_months_line, self.total_rupees_line,
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
-                      self.room_number_combo, self.cts_number_line, self.tenant_name_combo, self.notes_text,
-                      self.submit_button]:
+                      self.room_number_combo, self.cts_number_line, self.notes_text]:
             if isinstance(field, QComboBox):
                 field.setEnabled(True)
             elif isinstance(field, QDateEdit):
                 field.setReadOnly(False)
-            elif isinstance(field, QPushButton):
-                field.setDisabled(False)
             else:
                 field.setReadOnly(False)
                 field.setDisabled(False)
 
     def get_data_from_row(self, row):
         # Define column indices
-        columns = {'RECEIVED_DATE': 0, 'HOUSE_NO': 1, 'ROOM_NO': 2, 'CTS_NO': 3, 'TENANT_NAME': 4, 'RENT_FROM': 5,
-                   'RENT_TO': 6, 'RATE': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10, 'BILL_NO': 11,
-                   'EXTRA_PAYMENT': 12, 'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16, 'BILL_ID': 0}
+        columns = {'RECEIVED_DATE': 0, 'HOUSE_NO': 1, 'ROOM_NO': 2, 'CTS_NO': 3, 'RENT_FROM': 5, 'RENT_TO': 6,
+                   'RATE': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10, 'BILL_NO': 11, 'EXTRA_PAYMENT': 12,
+                   'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16, 'BILL_ID': 0}
 
         # Fetch the data from the table row
         data = {
@@ -372,13 +361,10 @@ class BillEntry(BaseWindow):
         self.agreement_date.setDate(QDate.fromString(data['AGREEMENT_DATE'], 'yyyy-MM-dd'))
 
         # Set comboboxes and line edits
-        # house_index = self.house_number_combo.findText(data['HOUSE_NO'])
-        # room_index = self.room_number_combo.findText(data['ROOM_NO'])
-        # self.house_number_combo.setCurrentIndex(house_index)
-        # self.room_number_combo.setCurrentIndex(room_index)
-        self.house_number_combo.setCurrentText(data['HOUSE_NO'])
-        self.tenant_name_combo.setCurrentText(data['TENANT_NAME'])
-        self.room_number_combo.setCurrentText(data['ROOM_NO'])
+        house_index = self.house_number_combo.findText(data['HOUSE_NO'])
+        room_index = self.room_number_combo.findText(data['ROOM_NO'])
+        self.house_number_combo.setCurrentIndex(house_index)
+        self.room_number_combo.setCurrentIndex(room_index)
         self.cts_number_line.setText(data['CTS_NO'])
 
         # If additional data was fetched from the database
@@ -397,7 +383,6 @@ class BillEntry(BaseWindow):
         data = self.get_data_from_row(row)
         self.set_data_to_form(data)
         self.house_number_combo.setDisabled(True)
-        self.tenant_name_combo.setDisabled(True)
         self.room_number_combo.setDisabled(True)
         self.cts_number_line.setDisabled(True)
 
@@ -430,7 +415,6 @@ class BillEntry(BaseWindow):
         self.make_form_editable()
         self.print_button.setDisabled(True)
         self.house_number_combo.setCurrentIndex(0)
-        self.tenant_name_combo.setCurrentIndex(0)
         self.room_number_combo.setCurrentIndex(0)
 
         # Clear line edits
@@ -439,7 +423,7 @@ class BillEntry(BaseWindow):
         self.purpose_line.clear()
         self.amount_line.clear()
         self.total_rupees_line.clear()
-        self.extra_payment_line.setText(str(0))
+        self.extra_payment_line.clear()
         self.notes_text.clear()
 
         # Reset the dates to current date
@@ -450,7 +434,6 @@ class BillEntry(BaseWindow):
         self.agreement_date.setDate(current_date)
 
         # Update fields
-        self.tenant_changed()
         self.room_changed()
         self.update_rent_to_date()
         self.update_total_months()
@@ -518,31 +501,111 @@ class BillEntry(BaseWindow):
             self.house_number_combo.addItem(house_number, house_id)
 
     def house_changed(self):
-        current_house_id = self.house_number_combo.currentData()
-        rooms = get_rooms_data_by_house_id(current_house_id)
-        self.tenant_name_combo.clear()
-        for room in rooms:
-            room_name, room_id = room[0], room[1]
-            tenant_name, tenant_id = get_tenants_data_by_room_id(room_id)
-            self.tenant_name_combo.addItem(tenant_name, tenant_id)
-            # if room_count == 0:
-
-    def tenant_changed(self):
-        current_tenant_id = self.tenant_name_combo.currentData()
-        self.room_number_combo.clear()
-        if current_tenant_id:
-            room_name, room_id = get_room_data_by_tenant_id(current_tenant_id)
-            self.room_number_combo.addItem(room_name, room_id)
-        else:
+        try:
+            print("house started")
+            current_house_id = self.house_number_combo.currentData()
             self.room_number_combo.clear()
+            self.tenant_name_combo.clear()
+            if current_house_id:
+                rooms = get_rooms_data_by_house_id(current_house_id)
+                for room in rooms:
+                    room_name, room_id = room
+                    self.room_number_combo.addItem(room_name, room_id)
+                # Update room and tenant based on the first room if available
+                if rooms:
+                    self.room_number_combo.setCurrentIndex(0)
+                    self.room_changed()
+            print("house changed")
+        except Exception as e:
+            print(str(e))
 
     def room_changed(self):
-        current_room_id = self.room_number_combo.currentData()
-        if current_room_id:
-            cts_number = get_cts_number_by_room_id(current_room_id)
-            self.cts_number_line.setText(cts_number)
+        try:
+            print('room started')
+            current_room_id = self.room_number_combo.currentData()
+            self.tenant_name_combo.clear()  # Clear tenants before adding new ones
+            if current_room_id:
+                cts_number = get_cts_number_by_room_id(current_room_id)
+                self.cts_number_line.setText(cts_number)
+
+                # Get tenants associated with the room and add to the tenant_name_combo
+                tenants_data = get_tenants_data_by_room_id(current_room_id)
+                print(tenants_data)
+                added_tenant_idx = []
+                for data in tenants_data:
+                    tenant_name, tenant_id = data
+                    self.tenant_name_combo.addItem(tenant_name, tenant_id)
+                    added_tenant_idx.append(tenant_id)
+
+                current_house_id = self.house_number_combo.currentData()
+                print(current_house_id)
+                rooms = get_rooms_data_by_house_id(current_house_id)
+                for room in rooms:
+                    room_name, room_id = room
+                    tenants_data = get_tenants_data_by_room_id(room_id)
+                    for data in tenants_data:
+                        tenant_name, tenant_id = data
+                        if tenant_id not in added_tenant_idx:
+                            self.tenant_name_combo.addItem(tenant_name, tenant_id)
+            else:
+                self.cts_number_line.clear()
+            print('room changed')
+        except Exception as e:
+            print(str(e))
+
+    def tenant_changed(self):
+        # self.room_number_combo.currentIndexChanged.disconnect(self.room_changed)
+        if not self.room_change:
+            current_tenant_id = self.tenant_name_combo.currentData()
+            self.room_number_combo.clear()  # Clear rooms before adding new ones
+            if current_tenant_id:
+                # Get rooms associated with the tenant and add to the room_number_combo
+                room_numbers = get_rooms_data_by_tenant_id(current_tenant_id)
+                added_room_idx = []
+                for room_number, room_id in room_numbers:
+                    self.room_number_combo.addItem(room_number, room_id)
+                    added_room_idx.append(room_id)
+
+                # Automatically select the first room for the tenant if available
+                if room_numbers:
+                    cts_number = get_cts_number_by_room_id(room_numbers[0])  # Pass the first room_id
+                    self.cts_number_line.setText(cts_number)
+
+                current_house_id = self.house_number_combo.currentData()
+                rooms = get_rooms_data_by_house_id(current_house_id)
+                for room in rooms:
+                    room_name, room_id = room
+                    if room_id not in added_room_idx:
+                        self.room_number_combo.addItem(room_name, room_id)
+            else:
+                self.cts_number_line.clear()
         else:
-            self.cts_number_line.clear()
+            print("in else")
+            # current_room_id = self.room_number_combo.currentData()
+            # self.tenant_name_combo.clear()  # Clear tenants before adding new ones
+            # if current_room_id:
+            #     # Get tenants associated with the room and add to the tenant_name_combo
+            #     tenants_data = get_tenants_data_by_room_id(current_room_id)
+            #     added_tenant_idx = []
+            #     print(self.tenant_name_combo.currentData())
+            #     for data in tenants_data:
+            #         tenant_name, tenant_id = data
+            #         self.tenant_name_combo.addItem(tenant_name, tenant_id)
+            #         added_tenant_idx.append(tenant_id)
+            #     current_house_id = self.house_number_combo.currentData()
+            #     rooms = get_rooms_data_by_house_id(current_house_id)
+            #     print(rooms)
+            #     for room in rooms:
+            #         room_name, room_id = room
+            #         tenants_data = get_tenants_data_by_room_id(room_id)
+            #         for data in tenants_data:
+            #             tenant_name, tenant_id = data
+            #             if tenant_id not in added_tenant_idx:
+            #                 self.tenant_name_combo.addItem(tenant_name, tenant_id)
+            # self.room_change = False
+
+        # Reconnect the signal after the updates are done
+        # self.room_number_combo.currentIndexChanged.connect(self.room_changed)
 
     def submit_data(self):
         mandatory_fields = [
@@ -552,7 +615,6 @@ class BillEntry(BaseWindow):
             (self.room_number_combo, "Room Number"),
             (self.purpose_line, "Purpose For"),
             (self.amount_line, "@"),
-            (self.extra_payment_line, "Extra Payment"),
         ]
 
         print("validating mandatory field")
@@ -597,11 +659,12 @@ class BillEntry(BaseWindow):
         extra_payment = self.extra_payment_line.text()
         agreement_date = self.agreement_date.date().toString("yyyy-MM-dd")
         notes = self.notes_text.text()
-        current_tenant_id = self.tenant_name_combo.currentData()
+
         if self.operation == "insert":
-            status, message = insert_bill_entry(rent_month, book_number, bill_number, purpose_for, rent_from, rent_to,
-                                                at_the_rate_of, total_months, total_rupees, received_date,
-                                                extra_payment, agreement_date, notes, current_tenant_id)
+            status, message = insert_bill_entry(rent_month, book_number, bill_number, house_number, room_number,
+                                                cts_number, purpose_for, rent_from, rent_to, at_the_rate_of,
+                                                total_months, total_rupees, received_date, extra_payment,
+                                                agreement_date, notes)
             if status:
                 QMessageBox.information(self, "Success", "Bill Data Inserted successfully!")
                 self.clear_form()
@@ -672,7 +735,7 @@ class BillEntry(BaseWindow):
             self.agreement_date.date().toString("yyyy-MM-dd"))
         rent_from = convert_date_string(self.rent_from_date.date().toString("MMM-yyyy"))
         rent_to = convert_date_string(self.rent_to_date.date().toString("MMM-yyyy"))
-        rent_from_to = rent_from + " to " + rent_to
+        rent_from_to = rent_from + "   to   " + rent_to
 
         data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
@@ -697,13 +760,13 @@ class BillEntry(BaseWindow):
                 "notes": self.notes_text.text()
                 }
 
-        bill_image_path = r'images/rr_bill.jpg'  # Replace with your image path
+        bill_image_path = r'images/output_bill_blank_image.png'  # Replace with your image path
         bill_image = QImage(bill_image_path)
 
         # Draw text onto the image
         painter = QPainter(bill_image)
         painter.begin(bill_image)
-        painter.setFont(QFont('Arial', 35))  # Choose a suitable font and size
+        painter.setFont(QFont('Arial', 33))  # Choose a suitable font and size
 
         # Define positions for the text fields on the image (these will need to be adjusted)
         positions = {
@@ -732,6 +795,8 @@ class BillEntry(BaseWindow):
         for key, value in data.items():
             x, y = positions[key]
             painter.drawText(x, y, value)
+            print(x, y, key)
+            print('text drawn')
 
         printer = QPrinter(QPrinter.HighResolution)
         printer.setPageSize(QPrinter.PageSize.A5)
