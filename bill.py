@@ -6,7 +6,7 @@ from base_class import BaseWindow
 from PyQt5.QtCore import QDate, Qt
 from datetime import datetime, date
 from PyQt5.QtGui import QPainter, QImage, QFont
-from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
     QMenuBar, QToolBar
@@ -738,12 +738,13 @@ class BillEntry(BaseWindow):
             painter.drawText(x, y, value)
 
         printer = QPrinter(QPrinter.HighResolution)
-        printer.setPageSize(QPrinter.PageSize.A5)
-        printer.setColorMode(QPrinter.Color)
-        printer.setFullPage(False)
-        printer.setOutputFormat(QPrinter.NativeFormat)
+        print_dialog = QPrintDialog(printer)
+        if print_dialog.exec_() == QPrintDialog.Accepted:
+            printer.setPageSize(QPrinter.PageSize.A5)
+            printer.setColorMode(QPrinter.Color)
+            printer.setFullPage(False)
+            printer.setOutputFormat(QPrinter.NativeFormat)
 
-        # Assuming the printer is already set up correctly, start painting directly
         painter = QPainter()
         if painter.begin(printer):
             rect = painter.viewport()
