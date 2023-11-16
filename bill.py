@@ -1,3 +1,4 @@
+import os
 import sys
 import master_entry
 from database import *
@@ -9,6 +10,7 @@ from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
     QMenuBar, QToolBar
+from PyQt5.QtGui import QPixmap
 
 
 class BillEntry(BaseWindow):
@@ -196,6 +198,9 @@ class BillEntry(BaseWindow):
         self.print_button.setDisabled(True)
 
         layout.addLayout(buttons_layout, 7, 1, 1, 5)  # Assuming row 7 is where you want the buttons
+
+        self.script_directory = os.path.dirname(os.path.abspath(__file__))
+        self.rr_bill_path = os.path.join(self.script_directory, 'images', 'output_bill_blank_image.png')
 
         self.search_bar = QLineEdit(self)
         self.search_bar.setPlaceholderText("Search...")
@@ -697,8 +702,7 @@ class BillEntry(BaseWindow):
                 "notes": self.notes_text.text()
                 }
 
-        bill_image_path = r'images/rr_bill.jpg'  # Replace with your image path
-        bill_image = QImage(bill_image_path)
+        bill_image = QImage(self.rr_bill_path)
 
         # Draw text onto the image
         painter = QPainter(bill_image)

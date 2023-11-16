@@ -771,3 +771,18 @@ def get_room_data_by_tenant_id(tenant_id):
 
     connection.close()
     return room_name, room_id
+
+
+def get_tenant_name_by_tenant_id(tenant_id):
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT tenant_name FROM Tenants WHERE tenant_id=%s AND current_tenant=%s"
+    current_tenant = "True"
+    cursor.execute(query, (tenant_id, current_tenant))
+    tenant_name = cursor.fetchone()[0]
+
+    connection.close()
+
+    return tenant_name
+

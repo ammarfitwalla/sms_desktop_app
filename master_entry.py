@@ -10,6 +10,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QDate, QSize
 from base_class import BaseWindow
 import bill
+from PyQt5.QtGui import QPixmap
 
 
 class MasterEntry(BaseWindow):
@@ -79,6 +80,11 @@ class MasterEntry(BaseWindow):
         self.clear_form_btn = QPushButton("Clear Form", self)
         self.clear_form_btn.clicked.connect(self.clear_form)
 
+        # --------------------------- ICONS PATH --------------------------- #
+        self.script_directory = os.path.dirname(os.path.abspath(__file__))
+        self.pen_icon_path = os.path.join(self.script_directory, 'icons', 'pen_icon.png')
+        self.delete_icon_path = os.path.join(self.script_directory, 'icons', 'delete_icon1.png')
+
         self.search_bar = QLineEdit(self)
         self.search_bar.setPlaceholderText("Search...")
 
@@ -123,7 +129,6 @@ class MasterEntry(BaseWindow):
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
 
         self.populate_table()
-
         self.setLayout(layout)
         main_layout.addLayout(layout)
 
@@ -242,13 +247,13 @@ class MasterEntry(BaseWindow):
                 item.setText(entry['tenant_dod'].strftime('%d-%m-%Y'))
 
             edit_btn = QPushButton(self)
-            edit_btn.setIcon(QIcon('icons' + os.sep + 'pen_icon.png'))
+            edit_btn.setIcon(QIcon(self.pen_icon_path))
             edit_btn.setIconSize(QSize(20, 20))
             edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
             self.master_entry_table.setCellWidget(row, 8, edit_btn)
 
             delete_btn = QPushButton(self)
-            delete_btn.setIcon(QIcon('icons' + os.sep + 'delete_icon1.png'))
+            delete_btn.setIcon(QIcon(self.delete_icon_path))
             delete_btn.setIconSize(QSize(30, 30))
             delete_btn.clicked.connect(lambda checked, r=row: self.delete_entry(r))
             self.master_entry_table.setCellWidget(row, 9, delete_btn)
