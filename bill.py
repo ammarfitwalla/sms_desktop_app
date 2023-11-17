@@ -671,6 +671,8 @@ class BillEntry(BaseWindow):
 
     def print_data(self):
         tenant_name = get_tenant_name_by_bill_id(self.bill_id)
+        tenant_name_first_set, tenant_name_second_set = split_name(tenant_name, 30)
+
         received_date_with_ordinal, received_month, received_year = get_date_month_year(
             self.received_date.date().toString("yyyy-MM-dd"))
         agreement_date_with_ordinal, agreement_month, agreement_year = get_date_month_year(
@@ -686,7 +688,6 @@ class BillEntry(BaseWindow):
                 "cts_number": self.cts_number_line.text(),
                 "house_number": self.house_number_combo.currentText(),
                 "room_number": self.room_number_combo.currentText(),
-                "tenant_name": tenant_name,
                 "rent_from_to": rent_from_to,
                 "total_rupees": self.total_rupees_line.text(),
                 "total_paise": "00.",
@@ -725,21 +726,30 @@ class BillEntry(BaseWindow):
             "@": (730, 1540),
             "at_the_rate_of": (665, 1595),
             "per_month": (665, 1640),
-            "received_date_with_ordinal": (993, 1870),
-            "received_month": (1260, 1870),
-            "received_year": (1493, 1870),
-            "agreement_date_with_ordinal": (480, 2180),
-            "agreement_month": (697, 2180),
-            "agreement_year": (956, 2180),
-            "notes": (390, 2480)}
+            "received_date_with_ordinal": (993, 1850),
+            "received_month": (1260, 1850),
+            "received_year": (1493, 1850),
+            "agreement_date_with_ordinal": (490, 2160),
+            "agreement_month": (697, 2160),
+            "agreement_year": (956, 2160),
+            "notes": (390, 2470)}
+
+        if tenant_name_second_set:
+            data["tenant_name_first_set"] = tenant_name_first_set
+            positions["tenant_name_first_set"] = (378, 1255)
+            data["tenant_name_second_set"] = tenant_name_second_set
+            positions["tenant_name_second_set"] = (378, 1355)
+        else:
+            data["tenant_name_first_set"] = tenant_name_first_set
+            positions["tenant_name_first_set"] = (378, 1355)
 
         for key, value in data.items():
             x, y = positions[key]
             painter.drawText(x, y, value)
 
         printer = QPrinter(QPrinter.HighResolution)
-#        print_dialog = QPrintDialog(printer)
-#        if print_dialog.exec_() == QPrintDialog.Accepted:
+        #        print_dialog = QPrintDialog(printer)
+        #        if print_dialog.exec_() == QPrintDialog.Accepted:
         printer.setPageSize(QPrinter.PageSize.A5)
         printer.setColorMode(QPrinter.Color)
         printer.setFullPage(False)
@@ -803,6 +813,17 @@ def convert_date_string(date_string):
         return formatted_date
     except ValueError:
         return None  # Handle invalid date strings gracefully
+
+
+def split_name(name, max_length):
+    if len(name) <= max_length:
+        return name, ""
+    else:
+        last_space_index = name[:max_length].rfind(' ')
+        if last_space_index != -1:
+            return name[:last_space_index], name[last_space_index + 1:]
+        else:
+            return name[:max_length], name[max_length:]
 
 
 if __name__ == '__main__':
