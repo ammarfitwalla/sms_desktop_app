@@ -725,25 +725,25 @@ class BillEntry(BaseWindow):
             "@": (730, 1540),
             "at_the_rate_of": (665, 1595),
             "per_month": (665, 1640),
-            "received_date_with_ordinal": (993, 1850),
-            "received_month": (1260, 1850),
-            "received_year": (1493, 1850),
-            "agreement_date_with_ordinal": (490, 2160),
-            "agreement_month": (697, 2160),
-            "agreement_year": (956, 2160),
-            "notes": (390, 2470)}
+            "received_date_with_ordinal": (993, 1870),
+            "received_month": (1260, 1870),
+            "received_year": (1493, 1870),
+            "agreement_date_with_ordinal": (480, 2180),
+            "agreement_month": (697, 2180),
+            "agreement_year": (956, 2180),
+            "notes": (390, 2480)}
 
         for key, value in data.items():
             x, y = positions[key]
             painter.drawText(x, y, value)
 
         printer = QPrinter(QPrinter.HighResolution)
-        print_dialog = QPrintDialog(printer)
-        if print_dialog.exec_() == QPrintDialog.Accepted:
-            printer.setPageSize(QPrinter.PageSize.A5)
-            printer.setColorMode(QPrinter.Color)
-            printer.setFullPage(False)
-            printer.setOutputFormat(QPrinter.NativeFormat)
+#        print_dialog = QPrintDialog(printer)
+#        if print_dialog.exec_() == QPrintDialog.Accepted:
+        printer.setPageSize(QPrinter.PageSize.A5)
+        printer.setColorMode(QPrinter.Color)
+        printer.setFullPage(False)
+        printer.setOutputFormat(QPrinter.NativeFormat)
 
         painter = QPainter()
         if painter.begin(printer):
