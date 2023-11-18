@@ -217,13 +217,13 @@ class MasterEntry(BaseWindow):
         self.notes_input.clear()
         self.male_rb.setChecked(False)
         self.female_rb.setChecked(False)
+        self.others_rb.setChecked(False)
         self.operation = "insert"  # Reset operation to insert after handling submission
         self.current_row = None
         self.setWindowTitle("Master Entry - Add")
 
     def populate_table(self, search_term=''):
         master_entries = database.get_all_master_entries()
-        # master_entries = list(reversed(master_entries))
 
         if search_term:
             master_entries = [
@@ -267,7 +267,7 @@ class MasterEntry(BaseWindow):
         columns_to_adjust = [0, 1, 2, 3, 4, 5, 6, 7]  # Adjust indices as needed
 
         for col in columns_to_adjust:
-            if col != 3:
+            if col not in [3]:
                 self.master_entry_table.resizeColumnToContents(col)
             else:
                 self.master_entry_table.setColumnWidth(col, 200)

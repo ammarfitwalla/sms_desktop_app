@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit,
     QMenuBar, QToolBar
 from PyQt5.QtGui import QPixmap
 
+from utils import split_name, get_date_month_year, convert_date_string
+
 
 class BillEntry(BaseWindow):
     def __init__(self):
@@ -97,10 +99,11 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.room_number_combo, 1, 3)
         layout.addWidget(self.cts_number_label, 1, 4)
         layout.addWidget(self.cts_number_line, 1, 5)
+
         layout.addWidget(self.tenant_name_label, 2, 0)
         layout.addWidget(self.tenant_name_combo, 2, 1, 1, 3)
 
-        # Row 4
+        # Row 3
         self.purpose_label = QLabel('Purpose For')
         self.purpose_line = QLineEdit()
         self.purpose_line.setText("For Residence")
@@ -108,7 +111,6 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.purpose_label, 3, 0)
         layout.addWidget(self.purpose_line, 3, 1)
 
-        # Row 5
         self.rent_from_label = QLabel('Rent From')
         self.rent_from_date = QDateEdit()
         self.rent_from_date.setDisplayFormat('MMM-yyyy')
@@ -127,7 +129,7 @@ class BillEntry(BaseWindow):
         self.rent_from_date.dateChanged.connect(self.update_total_months)
         self.rent_to_date.dateChanged.connect(self.update_total_months)
 
-        # Row 6
+        # Row 4
         self.amount_label = QLabel('@')
         self.amount_line = QLineEdit()
         # self.amount_line.setText('350')
@@ -135,7 +137,6 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.amount_label, 4, 0)
         layout.addWidget(self.amount_line, 4, 1)
 
-        # Row 7
         self.total_months_label = QLabel('Total Months')
         self.total_months_line = QLineEdit()
         self.total_months_line.setReadOnly(True)
@@ -143,7 +144,6 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.total_months_label, 4, 2)
         layout.addWidget(self.total_months_line, 4, 3)
 
-        # Row 8
         self.total_rupees_label = QLabel('Total Rupees')
         self.total_rupees_line = QLineEdit()
         self.total_rupees_line.setReadOnly(True)
@@ -151,34 +151,33 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.total_rupees_label, 4, 4)
         layout.addWidget(self.total_rupees_line, 4, 5)
 
-        # Row 9
+        # Row 5
         self.received_date_label = QLabel('Received Date')
         self.received_date = QDateEdit()
         self.received_date.setDate(QDate.currentDate())
         layout.addWidget(self.received_date_label, 5, 0)
         layout.addWidget(self.received_date, 5, 1)
 
-        # Row 10
         self.extra_payment_label = QLabel('Extra Payment')
         self.extra_payment_line = QLineEdit()
         self.extra_payment_line.setText(str(0))
         layout.addWidget(self.extra_payment_label, 5, 2)
         layout.addWidget(self.extra_payment_line, 5, 3)
 
-        # Row 11
         self.agreement_date_label = QLabel('Agreement Date')
         self.agreement_date = QDateEdit()
         self.agreement_date.setDate(QDate.currentDate())
         layout.addWidget(self.agreement_date_label, 5, 4)
         layout.addWidget(self.agreement_date, 5, 5)
 
+        # Row 6
+        # Add the QVBoxLayout to the main QGridLayout
         self.notes_label = QLabel('Notes')
         self.notes_text = QLineEdit()
-
-        # Add the QVBoxLayout to the main QGridLayout
         layout.addWidget(self.notes_label, 6, 0, 1, 5)
         layout.addWidget(self.notes_text, 6, 1, 1, 5)
 
+        # Row 7
         buttons_layout = QHBoxLayout()
 
         # Create Submit Button
@@ -199,6 +198,7 @@ class BillEntry(BaseWindow):
 
         layout.addLayout(buttons_layout, 7, 1, 1, 5)  # Assuming row 7 is where you want the buttons
 
+        # Row 8
         self.script_directory = os.path.dirname(os.path.abspath(__file__))
         self.rr_bill_path = os.path.join(self.script_directory, 'images', 'output_bill_blank_image.png')
 
@@ -208,6 +208,7 @@ class BillEntry(BaseWindow):
         layout.addWidget(search_label, 8, 0)
         layout.addWidget(self.search_bar, 8, 1, 1, -1)
 
+        # Row 9
         # Connect the search bar's textChanged signal to the filter_table method
         self.search_bar.textChanged.connect(self.filter_table)
 
@@ -596,9 +597,6 @@ class BillEntry(BaseWindow):
 
         print("getting user data")
         total_months = self.total_months_line.text()
-        house_number = self.house_number_combo.currentText()
-        room_number = self.room_number_combo.currentText()
-        cts_number = self.cts_number_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
         rent_to = self.rent_to_date.date().toString("MMM-yyyy")
         rent_month = self.rent_month_date.date().toString("MMM-yyyy")
@@ -801,38 +799,6 @@ class BillEntry(BaseWindow):
         #     painter.setWindow(bill_image.rect())
         #     painter.drawImage(0, 0, bill_image)
         #     painter.end()
-
-
-def get_date_month_year(user_date):
-    date_obj = datetime.strptime(user_date, "%Y-%m-%d")
-    day = int(date_obj.strftime("%d"))  # Convert day to an integer to remove leading zeros
-    if 4 <= day <= 20 or 24 <= day <= 30:
-        suffix = "th"
-    else:
-        suffix = ["st", "nd", "rd"][day % 10 - 1]
-
-    day_ordinal = str(day) + suffix
-    return day_ordinal, date_obj.strftime("%B"), date_obj.strftime("%Y")
-
-
-def convert_date_string(date_string):
-    try:
-        date_obj = datetime.strptime(date_string, "%b-%Y")
-        formatted_date = date_obj.strftime("%B %Y")
-        return formatted_date
-    except ValueError:
-        return None  # Handle invalid date strings gracefully
-
-
-def split_name(name, max_length):
-    if len(name) <= max_length:
-        return name, ""
-    else:
-        last_space_index = name[:max_length].rfind(' ')
-        if last_space_index != -1:
-            return name[:last_space_index], name[last_space_index + 1:]
-        else:
-            return name[:max_length], name[max_length:]
 
 
 if __name__ == '__main__':
