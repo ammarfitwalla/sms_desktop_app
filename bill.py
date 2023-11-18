@@ -222,13 +222,7 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
         layout.addWidget(self.bill_entry_table, 9, 0, 1, 6)
 
-        # Ensure that the table does not stretch beyond the minimum required width
-        self.bill_entry_table.setSizeAdjustPolicy(QTableWidget.AdjustToContents)
-
-        # Optionally, if you want the table to resize automatically when the contents change:
-        self.bill_entry_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.bill_entry_table.horizontalHeader().setStretchLastSection(
-            True)  # Stretch the last column to fill the space
+        self.bill_entry_table.setShowGrid(True)  # Enable the display of grid lines between cells
 
         # Use setStyleSheet to define the grid line color and style
         self.bill_entry_table.setStyleSheet("gridline-color: rgb(192, 192, 192);")  # Light grey grid lines
@@ -238,7 +232,10 @@ class BillEntry(BaseWindow):
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
         self.bill_entry_table.verticalHeader().setStyleSheet(
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
-        self.bill_entry_table.verticalHeader().setVisible(False)  # Hide the vertical header
+
+        name_column_index = self.bill_table_columns.index("Name")
+        name_column_width = 100
+        self.bill_entry_table.setColumnWidth(name_column_index, name_column_width)
 
         self.populate_table()
         self.update_total_months()
@@ -284,9 +281,21 @@ class BillEntry(BaseWindow):
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                     self.bill_entry_table.setItem(row_number, column_number, item)
 
+                    # Set tooltip for the "Name" column
+                    if column_name == "Tenant Name":  # Replace with your actual column name
+                        item.setToolTip(data)
+
                 self.bill_entry_table.item(row_number, 0).setData(Qt.UserRole, tenant_id)
                 # Add 'Edit' and 'Delete' buttons
                 self.add_table_buttons(row_number)
+
+            columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
+
+            for col in columns_to_adjust:
+                if col != 4:
+                    self.bill_entry_table.resizeColumnToContents(col)
+                else:
+                    self.bill_entry_table.setColumnWidth(col, 200)
 
     def add_table_buttons(self, row):
         btn_edit = QPushButton('Edit')
@@ -736,7 +745,7 @@ class BillEntry(BaseWindow):
 
         if tenant_name_second_set:
             data["tenant_name_first_set"] = tenant_name_first_set
-            positions["tenant_name_first_set"] = (378, 1255)
+            positions["tenant_name_first_set"] = (378, 1300)
             data["tenant_name_second_set"] = tenant_name_second_set
             positions["tenant_name_second_set"] = (378, 1355)
         else:

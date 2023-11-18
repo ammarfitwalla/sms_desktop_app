@@ -240,6 +240,12 @@ class MasterEntry(BaseWindow):
                      entry['tenant_mobile'], entry.get('tenant_dod', 'Alive'), entry['notes'], entry['tenant_gender']]):
                 item = QTableWidgetItem("" if value is None else str(value))
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
+                if value == entry['tenant_name']:
+                    item.setToolTip(entry['tenant_name'])
+                elif value == entry['notes']:
+                    item.setToolTip(entry['tenant_name'])
+
                 self.master_entry_table.setItem(row, col, item)
 
             if entry.get('tenant_dod') and isinstance(entry['tenant_dod'], (str, date)):
@@ -261,7 +267,10 @@ class MasterEntry(BaseWindow):
         columns_to_adjust = [0, 1, 2, 3, 4, 5, 6, 7]  # Adjust indices as needed
 
         for col in columns_to_adjust:
-            self.master_entry_table.resizeColumnToContents(col)
+            if col != 3:
+                self.master_entry_table.resizeColumnToContents(col)
+            else:
+                self.master_entry_table.setColumnWidth(col, 200)
 
     def validate_input(self):
         mandatory_fields = [(self.house_number_combo.currentText(), "House Number"),
