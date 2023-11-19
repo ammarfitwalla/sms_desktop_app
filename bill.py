@@ -687,7 +687,10 @@ class BillEntry(BaseWindow):
             self.agreement_date.date().toString("yyyy-MM-dd"))
         rent_from = convert_date_string(self.rent_from_date.date().toString("MMM-yyyy"))
         rent_to = convert_date_string(self.rent_to_date.date().toString("MMM-yyyy"))
-        rent_from_to = rent_from + " to " + rent_to
+        if rent_from == rent_to:
+            rent_from_to = rent_from
+        else:
+            rent_from_to = rent_from + "  to  " + rent_to
 
         data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
