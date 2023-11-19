@@ -444,6 +444,7 @@ class BillEntry(BaseWindow):
     def clear_form(self):
         self.make_form_editable()
         self.print_button.setDisabled(True)
+        self.rent_to_date.setReadOnly(True)
         self.house_number_combo.setCurrentIndex(0)
         self.tenant_name_combo.setCurrentIndex(0)
         self.room_number_combo.setCurrentIndex(0)
