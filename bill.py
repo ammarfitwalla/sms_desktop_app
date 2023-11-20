@@ -1,5 +1,6 @@
 import os
 import sys
+from PyQt5 import QtCore
 import master_entry
 from database import *
 from base_class import BaseWindow
@@ -9,7 +10,7 @@ from PyQt5.QtGui import QPainter, QImage, QFont
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
-    QMenuBar, QToolBar
+    QMenuBar, QToolBar, QCheckBox, QSizePolicy
 from PyQt5.QtGui import QPixmap
 
 from utils import split_name, get_date_month_year, convert_date_string
@@ -167,8 +168,24 @@ class BillEntry(BaseWindow):
         self.agreement_date_label = QLabel('Agreement Date')
         self.agreement_date = QDateEdit()
         self.agreement_date.setDate(QDate.currentDate())
-        layout.addWidget(self.agreement_date_label, 5, 4)
-        layout.addWidget(self.agreement_date, 5, 5)
+        self.is_alive_checkbox = QCheckBox("Date N/A", self)
+        self.is_alive_checkbox.stateChanged.connect(self.toggle_agreement_date_input)
+
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(self.agreement_date_label)
+        hlayout.addWidget(self.agreement_date)
+        hlayout.addWidget(self.is_alive_checkbox)
+        # Add some spacing between the widgets
+        hlayout.setSpacing(10)
+        layout.addLayout(hlayout, 5, 5)
+
+        # Set the alignment and size policy of the agreement date label
+        self.agreement_date_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.agreement_date_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Set the alignment and size policy of the agreement date widget
+        self.agreement_date.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.agreement_date.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Row 6
         # Add the QVBoxLayout to the main QGridLayout
@@ -240,6 +257,14 @@ class BillEntry(BaseWindow):
 
         self.populate_table()
         self.update_total_months()
+
+    def toggle_agreement_date_input(self, state):
+        if state == Qt.Checked:
+            self.agreement_date.setDisabled(True)
+            self.agreement_date.clear()  # Clear any date that was inputted
+        else:
+            self.agreement_date.setDisabled(False)
+            self.agreement_date.setDate(QDate.currentDate())
 
     def filter_table(self):
         search_term = self.search_bar.text().lower()
@@ -329,10 +354,12 @@ class BillEntry(BaseWindow):
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
                       self.room_number_combo, self.tenant_name_combo, self.cts_number_line, self.notes_text,
-                      self.submit_button]:
+                      self.submit_button, self.is_alive_checkbox]:
             if isinstance(field, QComboBox):
                 field.setEnabled(False)
             elif isinstance(field, QPushButton):
+                field.setDisabled(True)
+            elif isinstance(field, QCheckBox):
                 field.setDisabled(True)
             else:
                 field.setReadOnly(True)
@@ -344,12 +371,14 @@ class BillEntry(BaseWindow):
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
                       self.room_number_combo, self.cts_number_line, self.tenant_name_combo, self.notes_text,
-                      self.submit_button]:
+                      self.submit_button, self.is_alive_checkbox]:
             if isinstance(field, QComboBox):
                 field.setEnabled(True)
             elif isinstance(field, QDateEdit):
                 field.setReadOnly(False)
             elif isinstance(field, QPushButton):
+                field.setDisabled(False)
+            elif isinstance(field, QCheckBox):
                 field.setDisabled(False)
             else:
                 field.setReadOnly(False)
@@ -370,6 +399,8 @@ class BillEntry(BaseWindow):
         data['BILL_ID'] = self.bill_entry_table.item(row, columns['BILL_ID']).data(
             Qt.UserRole) if self.bill_entry_table.item(row, columns['BILL_ID']) else None
 
+        print(data)
+
         return data
 
     def set_data_to_form(self, data):
@@ -384,9 +415,19 @@ class BillEntry(BaseWindow):
         self.bill_number_line.setText(data['BILL_NO'])
         self.extra_payment_line.setText(data['EXTRA_PAYMENT'])
         self.purpose_line.setText(data['PURPOSE_FOR'])
-        self.agreement_date.setDate(QDate.fromString(data['AGREEMENT_DATE'], 'yyyy-MM-dd'))
 
-        # Set comboboxes and line edits
+        print(data["AGREEMENT_DATE"])
+        if data["AGREEMENT_DATE"] == "":
+            self.is_alive_checkbox.setChecked(True)
+            self.agreement_date.clear()
+        else:
+            self.is_alive_checkbox.setChecked(False)
+            self.agreement_date.setDate(QDate.fromString(data["AGREEMENT_DATE"], "yyyy-MM-dd"))
+            # self.agreement_date.setDate(QDate.currentDate())
+
+        # self.agreement_date.setDate(QDate.fromString(data['AGREEMENT_DATE'], 'yyyy-MM-dd'))
+
+        # Set combo-boxes and line edits
         # house_index = self.house_number_combo.findText(data['HOUSE_NO'])
         # room_index = self.room_number_combo.findText(data['ROOM_NO'])
         # self.house_number_combo.setCurrentIndex(house_index)
@@ -608,7 +649,11 @@ class BillEntry(BaseWindow):
         total_rupees = self.total_rupees_line.text()
         received_date = self.received_date.date().toString("yyyy-MM-dd")
         extra_payment = self.extra_payment_line.text()
-        agreement_date = self.agreement_date.date().toString("yyyy-MM-dd")
+        if self.is_alive_checkbox.isChecked():
+            agreement_date = None
+        else:
+            agreement_date = self.agreement_date.date().toString("yyyy-MM-dd")
+
         notes = self.notes_text.text()
         current_tenant_id = self.tenant_name_combo.currentData()
         if self.operation == "insert":
@@ -683,8 +728,7 @@ class BillEntry(BaseWindow):
 
         received_date_with_ordinal, received_month, received_year = get_date_month_year(
             self.received_date.date().toString("yyyy-MM-dd"))
-        agreement_date_with_ordinal, agreement_month, agreement_year = get_date_month_year(
-            self.agreement_date.date().toString("yyyy-MM-dd"))
+
         rent_from = convert_date_string(self.rent_from_date.date().toString("MMM-yyyy"))
         rent_to = convert_date_string(self.rent_to_date.date().toString("MMM-yyyy"))
         if rent_from == rent_to:
@@ -708,9 +752,6 @@ class BillEntry(BaseWindow):
                 "received_date_with_ordinal": received_date_with_ordinal,
                 "received_month": received_month,
                 "received_year": received_year,
-                "agreement_date_with_ordinal": agreement_date_with_ordinal,
-                "agreement_month": agreement_month,
-                "agreement_year": agreement_year,
                 "notes": self.notes_text.text()
                 }
 
@@ -740,19 +781,26 @@ class BillEntry(BaseWindow):
             "received_date_with_ordinal": (993, 1850),
             "received_month": (1260, 1850),
             "received_year": (1493, 1850),
-            "agreement_date_with_ordinal": (490, 2160),
-            "agreement_month": (697, 2160),
-            "agreement_year": (956, 2160),
             "notes": (390, 2470)}
 
         if tenant_name_second_set:
             data["tenant_name_first_set"] = tenant_name_first_set
-            positions["tenant_name_first_set"] = (378, 1300)
             data["tenant_name_second_set"] = tenant_name_second_set
+            positions["tenant_name_first_set"] = (378, 1300)
             positions["tenant_name_second_set"] = (378, 1355)
         else:
             data["tenant_name_first_set"] = tenant_name_first_set
             positions["tenant_name_first_set"] = (378, 1355)
+
+        if not self.is_alive_checkbox.isChecked():
+            agreement_date = self.agreement_date.date().toString("yyyy-MM-dd")
+            agreement_date_with_ordinal, agreement_month, agreement_year = get_date_month_year(agreement_date)
+            data["agreement_date_with_ordinal"] = agreement_date_with_ordinal
+            data["agreement_month"] = agreement_month
+            data["agreement_year"] = agreement_year
+            positions["agreement_date_with_ordinal"] = (490, 2160),
+            positions["agreement_month"] = (697, 2160),
+            positions["agreement_year"] = (956, 2160),
 
         for key, value in data.items():
             x, y = positions[key]

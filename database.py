@@ -590,7 +590,6 @@ def insert_bill_entry(rent_month, book_number, bill_number, purpose_for, rent_fr
 def update_bill_entry(bill_id, rent_month, book_number, bill_number, purpose_for,
                       rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
                       received_date, extra_payment, agreement_date, notes):
-    print(rent_month)
     connection = create_connection()
     cursor = connection.cursor()
 
