@@ -22,7 +22,7 @@ def convert_date_string(date_string):
         return None  # Handle invalid date strings gracefully
 
 
-def split_name(name, max_length):
+def split_string(name, max_length):
     if len(name) <= max_length:
         return name, ""
     else:

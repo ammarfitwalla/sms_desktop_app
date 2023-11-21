@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit,
     QMenuBar, QToolBar, QCheckBox, QSizePolicy
 from PyQt5.QtGui import QPixmap
 
-from utils import split_name, get_date_month_year, convert_date_string
+from utils import split_string, get_date_month_year, convert_date_string
 
 
 class BillEntry(BaseWindow):
@@ -218,6 +218,7 @@ class BillEntry(BaseWindow):
         # Row 8
         self.script_directory = os.path.dirname(os.path.abspath(__file__))
         self.rr_bill_path = os.path.join(self.script_directory, 'images', 'output_bill_blank_image.png')
+        # self.rr_bill_path = os.path.join(self.script_directory, 'images', 'rr_bill.jpg')
 
         self.search_bar = QLineEdit(self)
         self.search_bar.setPlaceholderText("Search...")
@@ -399,8 +400,6 @@ class BillEntry(BaseWindow):
         data['BILL_ID'] = self.bill_entry_table.item(row, columns['BILL_ID']).data(
             Qt.UserRole) if self.bill_entry_table.item(row, columns['BILL_ID']) else None
 
-        print(data)
-
         return data
 
     def set_data_to_form(self, data):
@@ -416,7 +415,6 @@ class BillEntry(BaseWindow):
         self.extra_payment_line.setText(data['EXTRA_PAYMENT'])
         self.purpose_line.setText(data['PURPOSE_FOR'])
 
-        print(data["AGREEMENT_DATE"])
         if data["AGREEMENT_DATE"] == "":
             self.is_alive_checkbox.setChecked(True)
             self.agreement_date.clear()
@@ -512,7 +510,7 @@ class BillEntry(BaseWindow):
         self.update_rent_to_date()
         self.update_total_months()
         self.update_total_rupees()
-        
+
         self.operation = 'insert'
         self.purpose_line.setText("For Residence")
         self.bill_id = None
@@ -584,7 +582,6 @@ class BillEntry(BaseWindow):
             room_name, room_id = room[0], room[1]
             tenant_name, tenant_id = get_tenants_data_by_room_id(room_id)
             self.tenant_name_combo.addItem(tenant_name, tenant_id)
-            # if room_count == 0:
 
     def tenant_changed(self):
         current_tenant_id = self.tenant_name_combo.currentData()
@@ -712,25 +709,29 @@ class BillEntry(BaseWindow):
         cts_number = self.cts_number_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
 
-        previous_rent_from_date, previous_rent_to_date = get_last_from_and_to_dates(house_number, room_number,
-                                                                                    cts_number, self.operation)
+        if self.operation == "insert":
+            previous_rent_from_date, previous_rent_to_date = get_last_from_and_to_dates(house_number, room_number,
+                                                                                        cts_number, self.operation)
 
-        if previous_rent_from_date and previous_rent_to_date:
-            previous_rent_to = datetime.strptime(previous_rent_to_date, "%b-%Y")
-            new_rent_from = datetime.strptime(rent_from, "%b-%Y")
-
-            if previous_rent_to > new_rent_from:
-                return False
+            if previous_rent_from_date and previous_rent_to_date:
+                previous_rent_to = datetime.strptime(previous_rent_to_date, "%b-%Y")
+                new_rent_from = datetime.strptime(rent_from, "%b-%Y")
+                if previous_rent_to > new_rent_from:
+                    return False
+        else:
+            pass
+            # previous_rent_from_date, previous_rent_to_date, next_rent_from_date, next_rent_to_date = get_adjacent_from_and_to_dates(
+            #     house_number, room_number, cts_number)
+            #
+            # print(previous_rent_from_date, previous_rent_to_date, next_rent_from_date, next_rent_to_date)
 
         return True
 
     def print_data(self):
         tenant_name = get_tenant_name_by_bill_id(self.bill_id)
-        tenant_name_first_set, tenant_name_second_set = split_name(tenant_name, 30)
-
+        tenant_name_first_set, tenant_name_second_set = split_string(tenant_name, 30)
         received_date_with_ordinal, received_month, received_year = get_date_month_year(
             self.received_date.date().toString("yyyy-MM-dd"))
-
         rent_from = convert_date_string(self.rent_from_date.date().toString("MMM-yyyy"))
         rent_to = convert_date_string(self.rent_to_date.date().toString("MMM-yyyy"))
         if rent_from == rent_to:
@@ -738,13 +739,15 @@ class BillEntry(BaseWindow):
         else:
             rent_from_to = rent_from + "  to  " + rent_to
 
+        room_number = self.room_number_combo.currentText()
+        room_number_first_set, room_number_second_set = split_string(room_number, 15)
+
         data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
                 "bill_number": self.bill_number_line.text(),
                 "purpose_for": self.purpose_line.text(),
                 "cts_number": self.cts_number_line.text(),
                 "house_number": self.house_number_combo.currentText(),
-                "room_number": self.room_number_combo.currentText(),
                 "rent_from_to": rent_from_to,
                 "total_rupees": self.total_rupees_line.text(),
                 "total_paise": "00.",
@@ -762,18 +765,18 @@ class BillEntry(BaseWindow):
         # Draw text onto the image
         painter = QPainter(bill_image)
         painter.begin(bill_image)
-        painter.setFont(QFont('Arial', 35))  # Choose a suitable font and size
+        font = QFont('Arial', 31)
+        font.setWeight(QFont.Bold)
+        painter.setFont(font)  # Choose a suitable font and size
 
         # Define positions for the text fields on the image (these will need to be adjusted)
         positions = {
             "rent_month": (600, 830),
-            "book_number": (1135, 830),
+            "book_number": (1145, 830),
             "bill_number": (1483, 830),
-            "purpose_for": (235, 940),
-            "cts_number": (1135, 940),
-            "room_number": (600, 1055),
-            "house_number": (1135, 1055),
-            "tenant_name": (378, 1355),
+            "purpose_for": (230, 940),
+            "cts_number": (1145, 940),
+            "house_number": (1145, 1055),
             "rent_from_to": (747, 1465),
             "total_rupees": (1127, 1625),
             "total_paise": (1483, 1625),
@@ -788,11 +791,20 @@ class BillEntry(BaseWindow):
         if tenant_name_second_set:
             data["tenant_name_first_set"] = tenant_name_first_set
             data["tenant_name_second_set"] = tenant_name_second_set
-            positions["tenant_name_first_set"] = (378, 1300)
+            positions["tenant_name_first_set"] = (378, 1305)
             positions["tenant_name_second_set"] = (378, 1355)
         else:
             data["tenant_name_first_set"] = tenant_name_first_set
             positions["tenant_name_first_set"] = (378, 1355)
+
+        if room_number_second_set:
+            data["room_number_first_set"] = room_number_first_set
+            data["room_number_second_set"] = room_number_second_set
+            positions["room_number_first_set"] = (600, 1000)
+            positions["room_number_second_set"] = (600, 1055)
+        else:
+            data["room_number_first_set"] = room_number_first_set
+            positions["room_number_first_set"] = (600, 1055)
 
         if not self.is_alive_checkbox.isChecked():
             agreement_date = self.agreement_date.date().toString("yyyy-MM-dd")
@@ -800,14 +812,15 @@ class BillEntry(BaseWindow):
             data["agreement_date_with_ordinal"] = agreement_date_with_ordinal
             data["agreement_month"] = agreement_month
             data["agreement_year"] = agreement_year
-            positions["agreement_date_with_ordinal"] = (490, 2160),
-            positions["agreement_month"] = (697, 2160),
-            positions["agreement_year"] = (956, 2160),
+            positions["agreement_date_with_ordinal"] = (490, 2160)
+            positions["agreement_month"] = (697, 2160)
+            positions["agreement_year"] = (956, 2160)
 
         for key, value in data.items():
             x, y = positions[key]
             painter.drawText(x, y, value)
 
+        # bill_image.save("output.png")
         printer = QPrinter(QPrinter.HighResolution)
         #        print_dialog = QPrintDialog(printer)
         #        if print_dialog.exec_() == QPrintDialog.Accepted:
@@ -826,15 +839,15 @@ class BillEntry(BaseWindow):
             painter.drawImage(0, 0, bill_image)
             painter.end()
         else:
-            print("Failed to start painting on printer.")
+            QMessageBox.warning(self, "Error", "Failed to start writing on bill.")
 
-        print(f"Printer name: {printer.printerName()}")
-        print(f"Page size: {printer.pageSize()}")
-        print(f"Page rect: {printer.pageRect()}")
-        print(f"Resolution: {printer.resolution()} DPI")
-        print(f"Color mode: {'Color' if printer.colorMode() == QPrinter.Color else 'Grayscale'}")
-        print(f"Is full page: {printer.fullPage()}")
-        print(f"Output format: {printer.outputFormat()}")
+        # print(f"Printer name: {printer.printerName()}")
+        # print(f"Page size: {printer.pageSize()}")
+        # print(f"Page rect: {printer.pageRect()}")
+        # print(f"Resolution: {printer.resolution()} DPI")
+        # print(f"Color mode: {'Color' if printer.colorMode() == QPrinter.Color else 'Grayscale'}")
+        # print(f"Is full page: {printer.fullPage()}")
+        # print(f"Output format: {printer.outputFormat()}")
 
         # Print the image
         # printer = QPrinter(QPrinter.HighResolution)

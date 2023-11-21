@@ -559,6 +559,49 @@ def get_last_from_and_to_dates(house_number, room_number, cts_number, operation)
         return None, None
 
 
+def get_adjacent_from_and_to_dates(house_number, room_number, cts_number):
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+
+        current_tenant = "True"
+        house_id = get_house_id_by_house_number(cursor, house_number)
+        cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
+        room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
+        tenant_id = get_tenant_id_by_room_id(cursor, room_id, current_tenant)
+
+        subquery_previous = "(SELECT MAX(bill_id) FROM bills WHERE tenant_id = %s AND bill_id < %s)"
+        subquery_next = "(SELECT MIN(bill_id) FROM bills WHERE tenant_id = %s AND bill_id > %s)"
+
+        query = (
+            "SELECT rent_from, rent_to "
+            "FROM bills "
+            "WHERE tenant_id = %s "
+            f"AND bill_id IN ({subquery_previous}, %s, {subquery_next})"
+        )
+
+        print(query)
+
+        cursor.execute(query, (tenant_id, tenant_id, tenant_id))
+        result = cursor.fetchall()
+        connection.close()
+
+        for res in result:
+            print(res)
+        if not result or len(result) != 3:
+            return None, None, None
+
+        previous_rent_from_date, previous_rent_to_date = result[0]
+        current_rent_from_date, current_rent_to_date = result[1]
+        next_rent_from_date, next_rent_to_date = result[2]
+
+        return previous_rent_from_date, previous_rent_to_date, next_rent_from_date, next_rent_to_date
+
+    except mysql.connector.Error as err:
+        print(str(err))
+        return None, None, None, None
+
+
 def insert_bill_entry(rent_month, book_number, bill_number, purpose_for, rent_from, rent_to, at_the_rate_of,
                       total_months, total_rupees, received_date, extra_payment, agreement_date, notes,
                       tenant_id):
@@ -656,6 +699,7 @@ def get_bill_table_data():
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
 
+
     query = """
             SELECT
             b.received_date AS "Received Date",
@@ -688,9 +732,9 @@ def get_bill_table_data():
         JOIN
             houses h ON c.house_id = h.house_id
         ORDER BY
-            h.house_number ASC, r.room_number ASC, b.bill_id DESC;
+            b.bill_id DESC;
     """
-
+    # h.house_number ASC, r.room_number ASC, b.bill_id DESC;
     cursor.execute(query)
     result = cursor.fetchall()
     connection.close()
@@ -784,4 +828,3 @@ def get_tenant_name_by_tenant_id(tenant_id):
     connection.close()
 
     return tenant_name
-
