@@ -512,7 +512,9 @@ class BillEntry(BaseWindow):
         self.update_rent_to_date()
         self.update_total_months()
         self.update_total_rupees()
+        
         self.operation = 'insert'
+        self.purpose_line.setText("For Residence")
         self.bill_id = None
         self.setWindowTitle("Bill Entry - Add")
 
