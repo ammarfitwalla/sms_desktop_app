@@ -729,7 +729,7 @@ class BillEntry(BaseWindow):
 
     def print_data(self):
         tenant_name = get_tenant_name_by_bill_id(self.bill_id)
-        tenant_name_first_set, tenant_name_second_set = split_string(tenant_name, 30)
+        tenant_name_first_set, tenant_name_second_set = split_string(tenant_name, 45)
         received_date_with_ordinal, received_month, received_year = get_date_month_year(
             self.received_date.date().toString("yyyy-MM-dd"))
         rent_from = convert_date_string(self.rent_from_date.date().toString("MMM-yyyy"))
@@ -772,20 +772,20 @@ class BillEntry(BaseWindow):
         # Define positions for the text fields on the image (these will need to be adjusted)
         positions = {
             "rent_month": (600, 830),
-            "book_number": (1145, 830),
-            "bill_number": (1483, 830),
+            "book_number": (1165, 830),
+            "bill_number": (1500, 830),
             "purpose_for": (230, 940),
-            "cts_number": (1145, 940),
-            "house_number": (1145, 1055),
-            "rent_from_to": (747, 1465),
-            "total_rupees": (1127, 1625),
-            "total_paise": (1483, 1625),
-            "@": (730, 1540),
-            "at_the_rate_of": (665, 1595),
-            "per_month": (665, 1640),
-            "received_date_with_ordinal": (993, 1850),
-            "received_month": (1260, 1850),
-            "received_year": (1493, 1850),
+            "cts_number": (1165, 940),
+            "house_number": (1165, 1055),
+            "rent_from_to": (747, 1475),
+            "total_rupees": (1140, 1635),
+            "total_paise": (1500, 1635),
+            "@": (730, 1550),
+            "at_the_rate_of": (675, 1605),
+            "per_month": (675, 1650),
+            "received_date_with_ordinal": (999, 1880),
+            "received_month": (1266, 1880),
+            "received_year": (1499, 1880),
             "notes": (390, 2470)}
 
         if tenant_name_second_set:
@@ -821,6 +821,7 @@ class BillEntry(BaseWindow):
             painter.drawText(x, y, value)
 
         # bill_image.save("output.png")
+        
         printer = QPrinter(QPrinter.HighResolution)
         #        print_dialog = QPrintDialog(printer)
         #        if print_dialog.exec_() == QPrintDialog.Accepted:
@@ -840,7 +841,7 @@ class BillEntry(BaseWindow):
             painter.end()
         else:
             QMessageBox.warning(self, "Error", "Failed to start writing on bill.")
-
+        
         # print(f"Printer name: {printer.printerName()}")
         # print(f"Page size: {printer.pageSize()}")
         # print(f"Page rect: {printer.pageRect()}")
