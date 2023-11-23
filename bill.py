@@ -289,9 +289,9 @@ class BillEntry(BaseWindow):
         if bill_entries:
             # Get the column names from the keys of the first dictionary in the list
             column_names = list(bill_entries[0].keys())
-
             # Populate the table with rows
             for row_number, row_data in enumerate(bill_entries):
+                print(row_number)
                 self.bill_entry_table.insertRow(row_number)
                 tenant_id = row_data["Bill ID"]
                 for column_number, column_name in enumerate(column_names):
@@ -309,35 +309,47 @@ class BillEntry(BaseWindow):
                     self.bill_entry_table.setItem(row_number, column_number, item)
 
                     # Set tooltip for the "Name" column
-                    if column_name == "Tenant Name":  # Replace with your actual column name
-                        item.setToolTip(data)
+                    # if column_name == "Tenant Name":  # Replace with your actual column name
+                    item.setToolTip(str(data))
 
                 self.bill_entry_table.item(row_number, 0).setData(Qt.UserRole, tenant_id)
                 # Add 'Edit' and 'Delete' buttons
                 self.add_table_buttons(row_number)
 
-            columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
+            # columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
+            columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                                 18]  # Adjust indices as needed
+            print(columns_to_adjust)
 
             for col in columns_to_adjust:
-                if col != 4:
-                    self.bill_entry_table.resizeColumnToContents(col)
-                else:
-                    self.bill_entry_table.setColumnWidth(col, 200)
+                self.bill_entry_table.resizeColumnToContents(col)
+
+            self.bill_entry_table.setColumnWidth(4, 200)
+            self.bill_entry_table.setColumnWidth(2, 80)
+            self.bill_entry_table.setColumnWidth(13, 100)
 
     def add_table_buttons(self, row):
         btn_edit = QPushButton('Edit')
         btn_edit.clicked.connect(lambda: self.edit_record(row))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 3, btn_edit)
+        btn_edit.setFixedWidth(50)
 
         # Print button
         btn_print = QPushButton('Print')
         btn_print.clicked.connect(lambda: self.print_record(row))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 2, btn_print)
+        btn_print.setFixedWidth(50)
 
         # Delete button
         btn_delete = QPushButton('Delete')
         btn_delete.clicked.connect(lambda: self.delete_record(row))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 1, btn_delete)
+        btn_delete.setFixedWidth(50)
+
+        button_columns = [len(self.bill_table_columns) - 3, len(self.bill_table_columns) - 2,
+                          len(self.bill_table_columns) - 1]
+        for col in button_columns:
+            self.bill_entry_table.setColumnWidth(col, 50)
 
     def print_record(self, row):
         data = self.get_data_from_row(row)
@@ -566,7 +578,7 @@ class BillEntry(BaseWindow):
             self.total_rupees_line.setText(str(total_rupees))
         except ValueError:
             # Handle the case where the input is not a valid float
-            self.total_rupees_line.setText('0')
+            self.total_rupees_line.setText(str(0))
 
     def populate_houses_dropdown(self):
         houses = get_house_data()  # Replace with your DB call
@@ -821,7 +833,7 @@ class BillEntry(BaseWindow):
             painter.drawText(x, y, value)
 
         # bill_image.save("output.png")
-        
+
         printer = QPrinter(QPrinter.HighResolution)
         #        print_dialog = QPrintDialog(printer)
         #        if print_dialog.exec_() == QPrintDialog.Accepted:
@@ -841,7 +853,7 @@ class BillEntry(BaseWindow):
             painter.end()
         else:
             QMessageBox.warning(self, "Error", "Failed to start writing on bill.")
-        
+
         # print(f"Printer name: {printer.printerName()}")
         # print(f"Page size: {printer.pageSize()}")
         # print(f"Page rect: {printer.pageRect()}")
