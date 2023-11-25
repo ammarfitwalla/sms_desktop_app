@@ -1,9 +1,10 @@
 import os
+import sys
 
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QMenuBar, QMenu, QAction,
                              QFormLayout, QLabel, QLineEdit, QDateEdit, QCheckBox,
                              QPushButton, QRadioButton, QGridLayout, QHBoxLayout,
-                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem, QToolBar)
+                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem, QToolBar, QApplication)
 import database
 from datetime import date
 from PyQt5.QtGui import QIcon
@@ -240,11 +241,7 @@ class MasterEntry(BaseWindow):
                      entry['tenant_mobile'], entry.get('tenant_dod', 'Alive'), entry['notes'], entry['tenant_gender']]):
                 item = QTableWidgetItem("" if value is None else str(value))
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-
-                if value == entry['tenant_name']:
-                    item.setToolTip(entry['tenant_name'])
-                elif value == entry['notes']:
-                    item.setToolTip(entry['tenant_name'])
+                item.setToolTip(str(value))
 
                 self.master_entry_table.setItem(row, col, item)
 
@@ -257,20 +254,25 @@ class MasterEntry(BaseWindow):
             edit_btn.setIconSize(QSize(20, 20))
             edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
             self.master_entry_table.setCellWidget(row, 8, edit_btn)
+            edit_btn.setFixedWidth(50)
+            self.master_entry_table.setColumnWidth(8, 50)
 
             delete_btn = QPushButton(self)
             delete_btn.setIcon(QIcon(self.delete_icon_path))
             delete_btn.setIconSize(QSize(30, 30))
             delete_btn.clicked.connect(lambda checked, r=row: self.delete_entry(r))
             self.master_entry_table.setCellWidget(row, 9, delete_btn)
+            delete_btn.setFixedWidth(50)
+            self.master_entry_table.setColumnWidth(9, 50)
 
-        columns_to_adjust = [0, 1, 2, 3, 4, 5, 6, 7]  # Adjust indices as needed
+        columns_to_adjust = [0, 1, 2, 4, 5, 6, 7]  # Adjust indices as needed
 
         for col in columns_to_adjust:
-            if col not in [3]:
-                self.master_entry_table.resizeColumnToContents(col)
-            else:
-                self.master_entry_table.setColumnWidth(col, 200)
+            self.master_entry_table.resizeColumnToContents(col)
+
+        self.master_entry_table.setColumnWidth(3, 200)
+        self.master_entry_table.setColumnWidth(6, 200)
+        self.master_entry_table.setColumnWidth(1, 80)
 
     def validate_input(self):
         mandatory_fields = [(self.house_number_combo.currentText(), "House Number"),
@@ -365,3 +367,10 @@ class MasterEntry(BaseWindow):
         else:
             self.tenant_dod_input.setDisabled(False)
             self.tenant_dod_input.setDate(QDate.currentDate())
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = MasterEntry()
+    window.show()
+    sys.exit(app.exec_())

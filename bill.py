@@ -4,9 +4,9 @@ from PyQt5 import QtCore
 import master_entry
 from database import *
 from base_class import BaseWindow
-from PyQt5.QtCore import QDate, Qt
+from PyQt5.QtCore import QDate, Qt, QSize
 from datetime import datetime, date
-from PyQt5.QtGui import QPainter, QImage, QFont
+from PyQt5.QtGui import QPainter, QImage, QFont, QIcon
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
@@ -194,6 +194,11 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.notes_label, 6, 0, 1, 5)
         layout.addWidget(self.notes_text, 6, 1, 1, 5)
 
+        self.script_directory = os.path.dirname(os.path.abspath(__file__))
+        self.pen_icon_path = os.path.join(self.script_directory, 'icons', 'pen_icon.png')
+        self.delete_icon_path = os.path.join(self.script_directory, 'icons', 'delete_icon1.png')
+        self.printer_icon_path = os.path.join(self.script_directory, 'icons', 'printer_icon.png')
+
         # Row 7
         buttons_layout = QHBoxLayout()
 
@@ -233,7 +238,7 @@ class BillEntry(BaseWindow):
         self.bill_entry_table = QTableWidget(self)
 
         self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
-                                   "Rent\nFrom", "Rent\nTo", "@", "Total\nMonth(s)", "Total\nAmount",
+                                   "Rent\nFrom", "Rent\nTo", "@", "Total\nMonths", "Total\nAmount",
                                    "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
                                    "Mobile", "DoD", "Agreement\nDate", "Gender", "Edit", "Print", "Delete"]
 
@@ -291,7 +296,6 @@ class BillEntry(BaseWindow):
             column_names = list(bill_entries[0].keys())
             # Populate the table with rows
             for row_number, row_data in enumerate(bill_entries):
-                print(row_number)
                 self.bill_entry_table.insertRow(row_number)
                 tenant_id = row_data["Bill ID"]
                 for column_number, column_name in enumerate(column_names):
@@ -319,7 +323,6 @@ class BillEntry(BaseWindow):
             # columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
             columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
                                  18]  # Adjust indices as needed
-            print(columns_to_adjust)
 
             for col in columns_to_adjust:
                 self.bill_entry_table.resizeColumnToContents(col)
@@ -329,20 +332,26 @@ class BillEntry(BaseWindow):
             self.bill_entry_table.setColumnWidth(13, 100)
 
     def add_table_buttons(self, row):
-        btn_edit = QPushButton('Edit')
+        btn_edit = QPushButton(self)
         btn_edit.clicked.connect(lambda: self.edit_record(row))
+        btn_edit.setIcon(QIcon(self.pen_icon_path))
+        btn_edit.setIconSize(QSize(20, 20))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 3, btn_edit)
         btn_edit.setFixedWidth(50)
 
         # Print button
-        btn_print = QPushButton('Print')
+        btn_print = QPushButton(self)
         btn_print.clicked.connect(lambda: self.print_record(row))
+        btn_print.setIcon(QIcon(self.printer_icon_path))
+        btn_print.setIconSize(QSize(40, 40))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 2, btn_print)
         btn_print.setFixedWidth(50)
 
         # Delete button
-        btn_delete = QPushButton('Delete')
+        btn_delete = QPushButton(self)
         btn_delete.clicked.connect(lambda: self.delete_record(row))
+        btn_delete.setIcon(QIcon(self.delete_icon_path))
+        btn_delete.setIconSize(QSize(30, 30))
         self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 1, btn_delete)
         btn_delete.setFixedWidth(50)
 
