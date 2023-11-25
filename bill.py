@@ -327,7 +327,7 @@ class BillEntry(BaseWindow):
             for col in columns_to_adjust:
                 self.bill_entry_table.resizeColumnToContents(col)
 
-            self.bill_entry_table.setColumnWidth(4, 200)
+            self.bill_entry_table.setColumnWidth(4, 250)
             self.bill_entry_table.setColumnWidth(2, 80)
             self.bill_entry_table.setColumnWidth(13, 100)
 
@@ -758,10 +758,10 @@ class BillEntry(BaseWindow):
         if rent_from == rent_to:
             rent_from_to = rent_from
         else:
-            rent_from_to = rent_from + "  to  " + rent_to
+            rent_from_to = rent_from + "      to      " + rent_to
 
         room_number = self.room_number_combo.currentText()
-        room_number_first_set, room_number_second_set = split_string(room_number, 15)
+        room_number_first_set, room_number_second_set = split_string(room_number, 21)
 
         data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
@@ -821,11 +821,11 @@ class BillEntry(BaseWindow):
         if room_number_second_set:
             data["room_number_first_set"] = room_number_first_set
             data["room_number_second_set"] = room_number_second_set
-            positions["room_number_first_set"] = (600, 1000)
-            positions["room_number_second_set"] = (600, 1055)
+            positions["room_number_first_set"] = (560, 1000)
+            positions["room_number_second_set"] = (560, 1055)
         else:
             data["room_number_first_set"] = room_number_first_set
-            positions["room_number_first_set"] = (600, 1055)
+            positions["room_number_first_set"] = (560, 1055)
 
         if not self.is_alive_checkbox.isChecked():
             agreement_date = self.agreement_date.date().toString("yyyy-MM-dd")
