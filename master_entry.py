@@ -271,8 +271,8 @@ class MasterEntry(BaseWindow):
         for col in columns_to_adjust:
             self.master_entry_table.resizeColumnToContents(col)
 
-        self.master_entry_table.setColumnWidth(3, 200)
-        self.master_entry_table.setColumnWidth(6, 200)
+        self.master_entry_table.setColumnWidth(3, 300)
+        self.master_entry_table.setColumnWidth(6, 300)
         self.master_entry_table.setColumnWidth(1, 80)
 
     def validate_input(self):
