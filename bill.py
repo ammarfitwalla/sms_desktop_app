@@ -21,7 +21,9 @@ class BillEntry(BaseWindow):
         super().__init__()
         self.init_ui()
         self.set_default_state()
+        self.showFullScreen()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+
 
     def set_default_state(self):
         self.bill_id = None
@@ -33,7 +35,6 @@ class BillEntry(BaseWindow):
         self.close()
         self.master_page = master_entry.MasterEntry()
         self.master_page.show()
-        print("Switching to Master")
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -167,8 +168,11 @@ class BillEntry(BaseWindow):
 
         self.agreement_date_label = QLabel('Agreement Date')
         self.agreement_date = QDateEdit()
-        self.agreement_date.setDate(QDate.currentDate())
+        # self.agreement_date.setDate(QDate.currentDate())
         self.is_alive_checkbox = QCheckBox("Date N/A", self)
+
+        self.agreement_date.setDisabled(True)
+        self.is_alive_checkbox.setChecked(True)
         self.is_alive_checkbox.stateChanged.connect(self.toggle_agreement_date_input)
 
         hlayout = QHBoxLayout()
@@ -240,7 +244,7 @@ class BillEntry(BaseWindow):
         self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
                                    "Rent\nFrom", "Rent\nTo", "@", "Total\nMonths", "Total\nAmount",
                                    "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
-                                   "Mobile", "DoD", "Agreement\nDate", "Gender", "Edit", "Print", "Delete"]
+                                   "Mobile", "DoD", "Agreement\nDate", "Notes", "Gender", "Edit", "Print", "Delete"]
 
         self.bill_entry_table.setColumnCount(len(self.bill_table_columns))
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
@@ -321,7 +325,7 @@ class BillEntry(BaseWindow):
                 self.add_table_buttons(row_number)
 
             # columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
-            columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+            columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
                                  18]  # Adjust indices as needed
 
             for col in columns_to_adjust:
@@ -330,6 +334,7 @@ class BillEntry(BaseWindow):
             self.bill_entry_table.setColumnWidth(4, 200)
             self.bill_entry_table.setColumnWidth(2, 80)
             self.bill_entry_table.setColumnWidth(13, 100)
+            self.bill_entry_table.setColumnWidth(17, 100)
 
     def add_table_buttons(self, row):
         btn_edit = QPushButton(self)

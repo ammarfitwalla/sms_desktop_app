@@ -698,8 +698,6 @@ def fetch_data_for_edit_record(bill_id):
 def get_bill_table_data():
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
-
-
     query = """
             SELECT
             b.received_date AS "Received Date",
@@ -719,6 +717,7 @@ def get_bill_table_data():
             t.tenant_mobile AS "Mobile",
             t.tenant_dod AS "DoD",
             b.agreement_date AS "Agreement Date",
+            b.notes AS "Notes",
             t.tenant_gender AS "Gender",
             b.bill_id AS "Bill ID"
         FROM
