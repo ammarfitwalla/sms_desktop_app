@@ -24,7 +24,6 @@ class BillEntry(BaseWindow):
         self.showFullScreen()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
-
     def set_default_state(self):
         self.bill_id = None
         self.current_row = None
@@ -325,15 +324,14 @@ class BillEntry(BaseWindow):
                 self.add_table_buttons(row_number)
 
             # columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
-            columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-                                 18]  # Adjust indices as needed
+            columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 18]  # Adjust indices as needed
 
             for col in columns_to_adjust:
                 self.bill_entry_table.resizeColumnToContents(col)
 
             self.bill_entry_table.setColumnWidth(4, 250)
             self.bill_entry_table.setColumnWidth(2, 80)
-            self.bill_entry_table.setColumnWidth(13, 100)
+            self.bill_entry_table.setColumnWidth(13, 80)
             self.bill_entry_table.setColumnWidth(17, 100)
 
     def add_table_buttons(self, row):
