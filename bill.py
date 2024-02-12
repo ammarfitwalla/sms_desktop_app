@@ -75,6 +75,7 @@ class BillEntry(BaseWindow):
         # Row 1
         self.house_number_label = QLabel('House Number')
         self.house_number_combo = QComboBox()
+        self.house_number_combo.addItem(" ")
 
         self.room_number_label = QLabel('Room Number')
         self.room_number_combo = QComboBox()
