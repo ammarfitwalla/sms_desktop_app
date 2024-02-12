@@ -741,8 +741,24 @@ def get_bill_table_data():
     return result
 
 
-def get_latest_bill_data_by_tenant_id(tenant_id):
-    pass
+def get_last_bill_data_by_tenant_id(tenant_id):
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        query = "SELECT * FROM bills where tenant_id = %s ORDER BY bill_id DESC LIMIT 1;"
+        cursor.execute(query, (tenant_id,))
+        result = cursor.fetchone()
+        connection.close()
+
+        if result:
+            return result
+        else:
+            return None
+
+    except mysql.connector.Error as err:
+        print("Error:", str(err))
+        return None
 
 
 def delete_bill_by_id(bill_id):
