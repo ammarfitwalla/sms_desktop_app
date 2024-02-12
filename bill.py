@@ -62,8 +62,11 @@ class BillEntry(BaseWindow):
         # Row 3
         self.book_number_label = QLabel('Book Number')
         self.book_number_line = QLineEdit()
+        self.book_number_line.setValidator(QIntValidator())
+
         self.bill_number_label = QLabel('Bill Number')
         self.bill_number_line = QLineEdit()
+        self.bill_number_line.setValidator(QIntValidator())
         # next_book_number, next_bill_number = self.calculate_next_numbers()
         # self.book_number_line.setText(str(next_book_number))
         # self.bill_number_line.setText(str(next_bill_number))
@@ -650,8 +653,6 @@ class BillEntry(BaseWindow):
             last_bill_data = get_last_bill_data_by_tenant_id(current_tenant_id)
             if last_bill_data:
                 # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
-                # set_data_keys = ['RECEIVED_DATE', 'RENT_FROM', 'RENT_TO', 'AT_THE_RATE_OF', 'TOTAL_MONTHS', 'TOTAL_AMOUNT',
-                #                  'BOOK_NO', 'BILL_NO', 'EXTRA_PAYMENT', 'PURPOSE_FOR', 'AGREEMENT_DATE']
                 set_data = {'RECEIVED_DATE': last_bill_data['received_date'].strftime('%Y-%m-%d'),
                             'RENT_FROM': last_bill_data['rent_from'], 'BOOK_NO': last_bill_data['book_number'],
                             'RENT_TO': last_bill_data['rent_to'], 'AT_THE_RATE_OF': last_bill_data['at_the_rate_of'],
