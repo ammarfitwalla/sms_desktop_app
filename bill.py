@@ -255,6 +255,7 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
         layout.addWidget(self.bill_entry_table, 9, 0, 1, 6)
 
+        self.bill_entry_table.setSortingEnabled(True)
         self.bill_entry_table.setShowGrid(True)  # Enable the display of grid lines between cells
 
         # Use setStyleSheet to define the grid line color and style
@@ -532,8 +533,8 @@ class BillEntry(BaseWindow):
         if reply == QMessageBox.Yes:
             success, message = delete_bill_by_id(bill_id)
             if success:
-                QMessageBox.information(self, "Success", "Successfully deleted the record.")
                 self.populate_table()
+                QMessageBox.information(self, "Success", "Successfully deleted the record.")
             else:
                 QMessageBox.warning(self, "Error", f"Error deleting the record: {message}")
         else:
