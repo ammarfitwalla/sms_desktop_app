@@ -415,7 +415,8 @@ class BillEntry(BaseWindow):
     def get_data_from_row(self, row):
         # Define column indices
         columns = {'RECEIVED_DATE': 0, 'HOUSE_NO': 1, 'ROOM_NO': 2, 'CTS_NO': 3, 'TENANT_NAME': 4, 'RENT_FROM': 5,
-                   'RENT_TO': 6, 'AT_THE_RATE_OF': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10, 'BILL_NO': 11,
+                   'RENT_TO': 6, 'AT_THE_RATE_OF': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10,
+                   'BILL_NO': 11,
                    'EXTRA_PAYMENT': 12, 'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16, 'BILL_ID': 0}
 
         # Fetch the data from the table row
@@ -648,7 +649,6 @@ class BillEntry(BaseWindow):
             self.room_number_combo.addItem(room_name, room_id)
             last_bill_data = get_last_bill_data_by_tenant_id(current_tenant_id)
             if last_bill_data:
-                print(last_bill_data)
                 # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
                 # set_data_keys = ['RECEIVED_DATE', 'RENT_FROM', 'RENT_TO', 'AT_THE_RATE_OF', 'TOTAL_MONTHS', 'TOTAL_AMOUNT',
                 #                  'BOOK_NO', 'BILL_NO', 'EXTRA_PAYMENT', 'PURPOSE_FOR', 'AGREEMENT_DATE']
@@ -663,7 +663,6 @@ class BillEntry(BaseWindow):
                             'PURPOSE_FOR': last_bill_data['purpose_for'],
                             'AGREEMENT_DATE': last_bill_data['agreement_date'].strftime('%Y-%m-%d') if
                             last_bill_data['agreement_date'] else ""}
-                print(last_bill_data)
                 self.set_data_to_form(set_data)
             else:
                 current_date = QDate.currentDate()
@@ -731,7 +730,7 @@ class BillEntry(BaseWindow):
             QMessageBox.warning(self, "Wrong Data", "'Rent From' Date already exists in Previous Bill.")
             return
 
-        print("getting user data")
+        print("getting user data...")
         total_months = self.total_months_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
         rent_to = self.rent_to_date.date().toString("MMM-yyyy")
@@ -751,14 +750,20 @@ class BillEntry(BaseWindow):
         notes = self.notes_text.text()
         current_tenant_id = self.tenant_name_combo.currentData()
         if self.operation == "insert":
-            status, message = insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for, rent_from, rent_to,
-                                                at_the_rate_of, total_months, total_rupees, received_date,
-                                                extra_payment, agreement_date, notes, current_tenant_id)
-            if status:
-                QMessageBox.information(self, "Success", "Bill Data Inserted successfully!")
-                self.clear_form()
-            else:
-                QMessageBox.warning(self, "Error", str(message))
+            reply = QMessageBox.question(self, 'Add Bill',
+                                         "Are you sure you want to Add this bill?",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                status, message = insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for, rent_from,
+                                                    rent_to,
+                                                    at_the_rate_of, total_months, total_rupees, received_date,
+                                                    extra_payment, agreement_date, notes, current_tenant_id)
+                if status:
+                    QMessageBox.information(self, "Success", "Bill Data Inserted successfully!")
+                    self.clear_form()
+                else:
+                    QMessageBox.warning(self, "Error", str(message))
+
         else:
             status, message = update_bill_entry(self.bill_id, bill_for_month_of, book_number, bill_number, purpose_for,
                                                 rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
@@ -803,7 +808,6 @@ class BillEntry(BaseWindow):
         room_number = self.room_number_combo.currentText()
         cts_number = self.cts_number_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
-
         if self.operation == "insert":
             previous_rent_from_date, previous_rent_to_date = get_last_from_and_to_dates(house_number, room_number,
                                                                                         cts_number, self.operation)
@@ -811,7 +815,7 @@ class BillEntry(BaseWindow):
             if previous_rent_from_date and previous_rent_to_date:
                 previous_rent_to = datetime.strptime(previous_rent_to_date, "%b-%Y")
                 new_rent_from = datetime.strptime(rent_from, "%b-%Y")
-                if previous_rent_to > new_rent_from:
+                if previous_rent_to >= new_rent_from:
                     return False
         else:
             pass
