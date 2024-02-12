@@ -6,7 +6,7 @@ from database import *
 from base_class import BaseWindow
 from PyQt5.QtCore import QDate, Qt, QSize
 from datetime import datetime, date
-from PyQt5.QtGui import QPainter, QImage, QFont, QIcon
+from PyQt5.QtGui import QPainter, QImage, QFont, QIcon, QIntValidator
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
@@ -133,6 +133,7 @@ class BillEntry(BaseWindow):
         # Row 4
         self.amount_label = QLabel('@')
         self.amount_line = QLineEdit()
+        self.amount_line.setValidator(QIntValidator())
         # self.amount_line.setText('350')
         self.amount_line.textChanged.connect(self.update_total_rupees)
         layout.addWidget(self.amount_label, 4, 0)
@@ -161,6 +162,7 @@ class BillEntry(BaseWindow):
 
         self.extra_payment_label = QLabel('Extra Payment')
         self.extra_payment_line = QLineEdit()
+        self.extra_payment_line.setValidator(QIntValidator())
         self.extra_payment_line.setText(str(0))
         layout.addWidget(self.extra_payment_label, 5, 2)
         layout.addWidget(self.extra_payment_line, 5, 3)
@@ -642,6 +644,7 @@ class BillEntry(BaseWindow):
         if current_room_id:
             cts_number = get_cts_number_by_room_id(current_room_id)
             self.cts_number_line.setText(cts_number)
+            self.cts_number_line.setReadOnly(True)
         else:
             self.cts_number_line.clear()
 
