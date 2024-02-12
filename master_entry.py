@@ -19,8 +19,8 @@ class MasterEntry(BaseWindow):
         super().__init__()
         self.init_ui()
         self.set_default_state()
-        self.showFullScreen()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.showMaximized()
 
     def set_default_state(self):
         self.operation = "insert"

@@ -21,8 +21,8 @@ class BillEntry(BaseWindow):
         super().__init__()
         self.init_ui()
         self.set_default_state()
-        self.showFullScreen()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.showMaximized()
 
     def set_default_state(self):
         self.bill_id = None
@@ -428,39 +428,60 @@ class BillEntry(BaseWindow):
 
     def set_data_to_form(self, data):
         # Fill the form fields with the data
-        self.received_date.setDate(QDate.fromString(data['RECEIVED_DATE'], 'yyyy-MM-dd'))
-        self.rent_from_date.setDate(QDate.fromString(data['RENT_FROM'], 'MMM-yyyy'))
-        self.rent_to_date.setDate(QDate.fromString(data['RENT_TO'], 'MMM-yyyy'))
-        self.amount_line.setText(data['RATE'])
-        self.total_months_line.setText(data['TOTAL_MONTHS'])
-        self.total_rupees_line.setText(data['TOTAL_AMOUNT'])
-        self.book_number_line.setText(data['BOOK_NO'])
-        self.bill_number_line.setText(data['BILL_NO'])
-        self.extra_payment_line.setText(data['EXTRA_PAYMENT'])
-        self.purpose_line.setText(data['PURPOSE_FOR'])
 
-        if data["AGREEMENT_DATE"] == "":
-            self.is_alive_checkbox.setChecked(True)
-            self.agreement_date.clear()
-        else:
-            self.is_alive_checkbox.setChecked(False)
-            self.agreement_date.setDate(QDate.fromString(data["AGREEMENT_DATE"], "yyyy-MM-dd"))
-            # self.agreement_date.setDate(QDate.currentDate())
+        # Check if the key is present before accessing it
+        if 'RECEIVED_DATE' in data:
+            self.received_date.setDate(QDate.fromString(data['RECEIVED_DATE'], 'yyyy-MM-dd'))
 
-        # self.agreement_date.setDate(QDate.fromString(data['AGREEMENT_DATE'], 'yyyy-MM-dd'))
+        if 'RENT_FROM' in data:
+            self.rent_from_date.setDate(QDate.fromString(data['RENT_FROM'], 'MMM-yyyy'))
 
-        # Set combo-boxes and line edits
-        # house_index = self.house_number_combo.findText(data['HOUSE_NO'])
-        # room_index = self.room_number_combo.findText(data['ROOM_NO'])
-        # self.house_number_combo.setCurrentIndex(house_index)
-        # self.room_number_combo.setCurrentIndex(room_index)
-        self.house_number_combo.setCurrentText(data['HOUSE_NO'])
-        self.tenant_name_combo.setCurrentText(data['TENANT_NAME'])
-        self.room_number_combo.setCurrentText(data['ROOM_NO'])
-        self.cts_number_line.setText(data['CTS_NO'])
+        if 'RENT_TO' in data:
+            self.rent_to_date.setDate(QDate.fromString(data['RENT_TO'], 'MMM-yyyy'))
+
+        if 'RATE' in data:
+            self.amount_line.setText(data['RATE'])
+
+        if 'TOTAL_MONTHS' in data:
+            self.total_months_line.setText(data['TOTAL_MONTHS'])
+
+        if 'TOTAL_AMOUNT' in data:
+            self.total_rupees_line.setText(data['TOTAL_AMOUNT'])
+
+        if 'BOOK_NO' in data:
+            self.book_number_line.setText(data['BOOK_NO'])
+
+        if 'BILL_NO' in data:
+            self.bill_number_line.setText(data['BILL_NO'])
+
+        if 'EXTRA_PAYMENT' in data:
+            self.extra_payment_line.setText(data['EXTRA_PAYMENT'])
+
+        if 'PURPOSE_FOR' in data:
+            self.purpose_line.setText(data['PURPOSE_FOR'])
+
+        if 'AGREEMENT_DATE' in data:
+            if data["AGREEMENT_DATE"] == "":
+                self.is_alive_checkbox.setChecked(True)
+                self.agreement_date.clear()
+            else:
+                self.is_alive_checkbox.setChecked(False)
+                self.agreement_date.setDate(QDate.fromString(data["AGREEMENT_DATE"], "yyyy-MM-dd"))
+
+        if 'HOUSE_NO' in data:
+            self.house_number_combo.setCurrentText(data['HOUSE_NO'])
+
+        if 'TENANT_NAME' in data:
+            self.tenant_name_combo.setCurrentText(data['TENANT_NAME'])
+
+        if 'ROOM_NO' in data:
+            self.room_number_combo.setCurrentText(data['ROOM_NO'])
+
+        if 'CTS_NO' in data:
+            self.cts_number_line.setText(data['CTS_NO'])
 
         # If additional data was fetched from the database
-        if data['BILL_ID']:
+        if 'BILL_ID' in data and data['BILL_ID']:
             self.bill_id = data['BILL_ID']
             rent_month_date, notes = fetch_data_for_edit_record(data['BILL_ID'])
             if rent_month_date:

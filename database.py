@@ -741,6 +741,10 @@ def get_bill_table_data():
     return result
 
 
+def get_latest_bill_data_by_tenant_id(tenant_id):
+    pass
+
+
 def delete_bill_by_id(bill_id):
     connection = create_connection()
     cursor = connection.cursor()
