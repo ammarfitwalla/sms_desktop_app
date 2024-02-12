@@ -776,21 +776,6 @@ class BillEntry(BaseWindow):
 
         self.populate_table()
         self.setWindowTitle("Bill Entry - Add")
-        # print(bill_for_month_of)
-        # print(book_number)
-        # print(bill_number)
-        # print(house_number)
-        # print(room_number)
-        # print(cts_number)
-        # print(rent_from)
-        # print(rent_to)
-        # print(at_the_rate_of)
-        # print(total_months)
-        # print(total_rupees)
-        # print(str(received_date))
-        # print(extra_payment)
-        # print(str(agreement_date))
-        # print(notes)
 
     def validate_at_the_rate_of(self):
         input_text = self.at_the_rate_of.text()
