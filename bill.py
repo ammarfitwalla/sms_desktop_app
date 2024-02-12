@@ -52,12 +52,12 @@ class BillEntry(BaseWindow):
         main_layout.addLayout(layout)  # Add the grid layout to the main layout
 
         # Row 2
-        self.rent_month_label = QLabel('Bill For Month Of')
-        self.rent_month_date = QDateEdit()
-        self.rent_month_date.setDisplayFormat('MMM-yyyy')
-        self.rent_month_date.setDate(QDate.currentDate())
-        layout.addWidget(self.rent_month_label, 0, 0)
-        layout.addWidget(self.rent_month_date, 0, 1)  # Spanning across two columns for space
+        self.bill_for_month_of_label = QLabel('Bill For Month Of')
+        self.bill_for_month_of = QDateEdit()
+        self.bill_for_month_of.setDisplayFormat('MMM-yyyy')
+        self.bill_for_month_of.setDate(QDate.currentDate())
+        layout.addWidget(self.bill_for_month_of_label, 0, 0)
+        layout.addWidget(self.bill_for_month_of, 0, 1)  # Spanning across two columns for space
 
         # Row 3
         self.book_number_label = QLabel('Book Number')
@@ -127,18 +127,18 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.rent_to_label, 3, 4)
         layout.addWidget(self.rent_to_date, 3, 5)
 
-        self.rent_month_date.dateChanged.connect(self.update_rent_to_date)
+        self.bill_for_month_of.dateChanged.connect(self.update_rent_to_date)
         self.rent_from_date.dateChanged.connect(self.update_total_months)
         self.rent_to_date.dateChanged.connect(self.update_total_months)
 
         # Row 4
-        self.amount_label = QLabel('@')
-        self.amount_line = QLineEdit()
-        self.amount_line.setValidator(QIntValidator())
-        # self.amount_line.setText('350')
-        self.amount_line.textChanged.connect(self.update_total_rupees)
-        layout.addWidget(self.amount_label, 4, 0)
-        layout.addWidget(self.amount_line, 4, 1)
+        self.at_the_rate_of_label = QLabel('@')
+        self.at_the_rate_of = QLineEdit()
+        self.at_the_rate_of.setValidator(QIntValidator())
+        # self.at_the_rate_of.setText('350')
+        self.at_the_rate_of.textChanged.connect(self.update_total_rupees)
+        layout.addWidget(self.at_the_rate_of_label, 4, 0)
+        layout.addWidget(self.at_the_rate_of, 4, 1)
 
         self.total_months_label = QLabel('Total Months')
         self.total_months_line = QLineEdit()
@@ -377,8 +377,8 @@ class BillEntry(BaseWindow):
 
     def make_form_readonly(self):
         # Iterate over all the form fields to set them to read-only
-        for field in [self.received_date, self.rent_month_date, self.rent_from_date, self.rent_to_date,
-                      self.amount_line, self.total_months_line, self.total_rupees_line,
+        for field in [self.received_date, self.bill_for_month_of, self.rent_from_date, self.rent_to_date,
+                      self.at_the_rate_of, self.total_months_line, self.total_rupees_line,
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
                       self.room_number_combo, self.tenant_name_combo, self.cts_number_line, self.notes_text,
@@ -394,8 +394,8 @@ class BillEntry(BaseWindow):
 
     def make_form_editable(self):
         # Iterate over all the form fields to set them to editable
-        for field in [self.received_date, self.rent_month_date, self.rent_from_date, self.rent_to_date,
-                      self.amount_line, self.total_months_line, self.total_rupees_line,
+        for field in [self.received_date, self.bill_for_month_of, self.rent_from_date, self.rent_to_date,
+                      self.at_the_rate_of, self.total_months_line, self.total_rupees_line,
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
                       self.room_number_combo, self.cts_number_line, self.tenant_name_combo, self.notes_text,
@@ -415,7 +415,7 @@ class BillEntry(BaseWindow):
     def get_data_from_row(self, row):
         # Define column indices
         columns = {'RECEIVED_DATE': 0, 'HOUSE_NO': 1, 'ROOM_NO': 2, 'CTS_NO': 3, 'TENANT_NAME': 4, 'RENT_FROM': 5,
-                   'RENT_TO': 6, 'RATE': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10, 'BILL_NO': 11,
+                   'RENT_TO': 6, 'AT_THE_RATE_OF': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10, 'BILL_NO': 11,
                    'EXTRA_PAYMENT': 12, 'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16, 'BILL_ID': 0}
 
         # Fetch the data from the table row
@@ -435,6 +435,10 @@ class BillEntry(BaseWindow):
         # Check if the key is present before accessing it
         if 'RECEIVED_DATE' in data:
             self.received_date.setDate(QDate.fromString(data['RECEIVED_DATE'], 'yyyy-MM-dd'))
+            # bill_for_month_of
+
+        if 'BILL_FOR_MONTH_OF' in data:
+            self.bill_for_month_of.setDate(QDate.fromString(data['BILL_FOR_MONTH_OF'], 'MMM-yyyy'))
 
         if 'RENT_FROM' in data:
             self.rent_from_date.setDate(QDate.fromString(data['RENT_FROM'], 'MMM-yyyy'))
@@ -442,23 +446,23 @@ class BillEntry(BaseWindow):
         if 'RENT_TO' in data:
             self.rent_to_date.setDate(QDate.fromString(data['RENT_TO'], 'MMM-yyyy'))
 
-        if 'RATE' in data:
-            self.amount_line.setText(data['RATE'])
+        if 'AT_THE_RATE_OF' in data:
+            self.at_the_rate_of.setText(str(data['AT_THE_RATE_OF']))
 
         if 'TOTAL_MONTHS' in data:
-            self.total_months_line.setText(data['TOTAL_MONTHS'])
+            self.total_months_line.setText(str(data['TOTAL_MONTHS']))
 
         if 'TOTAL_AMOUNT' in data:
-            self.total_rupees_line.setText(data['TOTAL_AMOUNT'])
+            self.total_rupees_line.setText(str(data['TOTAL_AMOUNT']))
 
         if 'BOOK_NO' in data:
-            self.book_number_line.setText(data['BOOK_NO'])
+            self.book_number_line.setText(str(data['BOOK_NO']))
 
         if 'BILL_NO' in data:
-            self.bill_number_line.setText(data['BILL_NO'])
+            self.bill_number_line.setText(str(data['BILL_NO']))
 
         if 'EXTRA_PAYMENT' in data:
-            self.extra_payment_line.setText(data['EXTRA_PAYMENT'])
+            self.extra_payment_line.setText(str(data['EXTRA_PAYMENT']))
 
         if 'PURPOSE_FOR' in data:
             self.purpose_line.setText(data['PURPOSE_FOR'])
@@ -470,6 +474,9 @@ class BillEntry(BaseWindow):
             else:
                 self.is_alive_checkbox.setChecked(False)
                 self.agreement_date.setDate(QDate.fromString(data["AGREEMENT_DATE"], "yyyy-MM-dd"))
+
+        if 'NOTES' in data:
+            self.notes_text.setText(data['NOTES'])
 
         if 'HOUSE_NO' in data:
             self.house_number_combo.setCurrentText(data['HOUSE_NO'])
@@ -486,9 +493,9 @@ class BillEntry(BaseWindow):
         # If additional data was fetched from the database
         if 'BILL_ID' in data and data['BILL_ID']:
             self.bill_id = data['BILL_ID']
-            rent_month_date, notes = fetch_data_for_edit_record(data['BILL_ID'])
-            if rent_month_date:
-                self.rent_month_date.setDate(QDate.fromString(rent_month_date, 'MMM-yyyy'))
+            bill_for_month_of, notes = fetch_data_for_edit_record(data['BILL_ID'])
+            if bill_for_month_of:
+                self.bill_for_month_of.setDate(QDate.fromString(bill_for_month_of, 'MMM-yyyy'))
             if notes:
                 self.notes_text.setText(notes)
 
@@ -540,14 +547,14 @@ class BillEntry(BaseWindow):
         self.book_number_line.clear()
         self.bill_number_line.clear()
         self.purpose_line.clear()
-        self.amount_line.clear()
+        self.at_the_rate_of.clear()
         self.total_rupees_line.clear()
         self.extra_payment_line.setText(str(0))
         self.notes_text.clear()
 
         # Reset the dates to current date
         current_date = QDate.currentDate()
-        self.rent_month_date.setDate(current_date)
+        self.bill_for_month_of.setDate(current_date)
         self.rent_from_date.setDate(current_date)
         self.received_date.setDate(current_date)
         self.agreement_date.setDate(current_date)
@@ -563,6 +570,8 @@ class BillEntry(BaseWindow):
         self.purpose_line.setText("For Residence")
         self.bill_id = None
         self.setWindowTitle("Bill Entry - Add")
+        self.is_alive_checkbox.setChecked(True)
+        self.agreement_date.clear()
 
     def calculate_next_numbers(self):
         # Get the latest numbers from the database
@@ -581,8 +590,8 @@ class BillEntry(BaseWindow):
         return next_book_number, next_bill_number
 
     def update_rent_to_date(self):
-        rent_month_date = self.rent_month_date.date()
-        self.rent_to_date.setDate(rent_month_date)
+        bill_for_month_of = self.bill_for_month_of.date()
+        self.rent_to_date.setDate(bill_for_month_of)
 
     def update_total_months(self):
         rent_from_date = self.rent_from_date.date()
@@ -599,16 +608,16 @@ class BillEntry(BaseWindow):
 
     def update_total_rupees(self):
         # Get the values from the amount and total months QLineEdit widgets
-        amount_text = self.amount_line.text()
+        at_the_rate_of_text = self.at_the_rate_of.text()
         total_months_text = self.total_months_line.text()
 
         try:
             # Convert the text to float values
-            amount = float(amount_text)
+            at_the_rate_of_text = float(at_the_rate_of_text)
             total_months = float(total_months_text)
 
             # Calculate the product
-            total_rupees = amount * total_months
+            total_rupees = at_the_rate_of_text * total_months
 
             # Update the total_rupees_line QLineEdit with the calculated value
             self.total_rupees_line.setText(str(total_rupees))
@@ -617,7 +626,7 @@ class BillEntry(BaseWindow):
             self.total_rupees_line.setText(str(0))
 
     def populate_houses_dropdown(self):
-        houses = get_house_data()  # Replace with your DB call
+        houses = get_house_data()
         for house in houses:
             house_number, house_id = house[0], house[1]
             self.house_number_combo.addItem(house_number, house_id)
@@ -637,6 +646,43 @@ class BillEntry(BaseWindow):
         if current_tenant_id:
             room_name, room_id = get_room_data_by_tenant_id(current_tenant_id)
             self.room_number_combo.addItem(room_name, room_id)
+            last_bill_data = get_last_bill_data_by_tenant_id(current_tenant_id)
+            if last_bill_data:
+                print(last_bill_data)
+                # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
+                # set_data_keys = ['RECEIVED_DATE', 'RENT_FROM', 'RENT_TO', 'AT_THE_RATE_OF', 'TOTAL_MONTHS', 'TOTAL_AMOUNT',
+                #                  'BOOK_NO', 'BILL_NO', 'EXTRA_PAYMENT', 'PURPOSE_FOR', 'AGREEMENT_DATE']
+                set_data = {'RECEIVED_DATE': last_bill_data['received_date'].strftime('%Y-%m-%d'),
+                            'RENT_FROM': last_bill_data['rent_from'], 'BOOK_NO': last_bill_data['book_number'],
+                            'RENT_TO': last_bill_data['rent_to'], 'AT_THE_RATE_OF': last_bill_data['at_the_rate_of'],
+                            'TOTAL_MONTHS': last_bill_data['total_months'],
+                            'BILL_NO': last_bill_data['bill_number'],
+                            'BILL_FOR_MONTH_OF': last_bill_data['bill_for_month_of'],
+                            'TOTAL_AMOUNT': last_bill_data['total_rupees'],
+                            'EXTRA_PAYMENT': last_bill_data['extra_payment'], 'NOTES': last_bill_data['notes'],
+                            'PURPOSE_FOR': last_bill_data['purpose_for'],
+                            'AGREEMENT_DATE': last_bill_data['agreement_date'].strftime('%Y-%m-%d') if
+                            last_bill_data['agreement_date'] else ""}
+                print(last_bill_data)
+                self.set_data_to_form(set_data)
+            else:
+                current_date = QDate.currentDate()
+                self.bill_for_month_of.setDate(current_date)
+                self.rent_from_date.setDate(current_date)
+                self.received_date.setDate(current_date)
+                self.agreement_date.setDate(current_date)
+                self.book_number_line.clear()
+                self.bill_number_line.clear()
+                self.purpose_line.clear()
+                self.at_the_rate_of.clear()
+                self.total_rupees_line.clear()
+                self.extra_payment_line.setText(str(0))
+                self.notes_text.clear()
+                self.update_rent_to_date()
+                self.update_total_months()
+                self.update_total_rupees()
+                self.is_alive_checkbox.setChecked(True)
+                self.agreement_date.clear()
         else:
             self.room_number_combo.clear()
 
@@ -656,7 +702,7 @@ class BillEntry(BaseWindow):
             (self.house_number_combo, "House Number"),
             (self.room_number_combo, "Room Number"),
             (self.purpose_line, "Purpose For"),
-            (self.amount_line, "@"),
+            (self.at_the_rate_of, "@"),
             (self.extra_payment_line, "Extra Payment"),
         ]
 
@@ -689,11 +735,11 @@ class BillEntry(BaseWindow):
         total_months = self.total_months_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
         rent_to = self.rent_to_date.date().toString("MMM-yyyy")
-        rent_month = self.rent_month_date.date().toString("MMM-yyyy")
+        bill_for_month_of = self.bill_for_month_of.date().toString("MMM-yyyy")
         book_number = self.book_number_line.text()
         bill_number = self.bill_number_line.text()
         purpose_for = self.purpose_line.text()
-        at_the_rate_of = self.amount_line.text()
+        at_the_rate_of = self.at_the_rate_of.text()
         total_rupees = self.total_rupees_line.text()
         received_date = self.received_date.date().toString("yyyy-MM-dd")
         extra_payment = self.extra_payment_line.text()
@@ -705,7 +751,7 @@ class BillEntry(BaseWindow):
         notes = self.notes_text.text()
         current_tenant_id = self.tenant_name_combo.currentData()
         if self.operation == "insert":
-            status, message = insert_bill_entry(rent_month, book_number, bill_number, purpose_for, rent_from, rent_to,
+            status, message = insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for, rent_from, rent_to,
                                                 at_the_rate_of, total_months, total_rupees, received_date,
                                                 extra_payment, agreement_date, notes, current_tenant_id)
             if status:
@@ -714,7 +760,7 @@ class BillEntry(BaseWindow):
             else:
                 QMessageBox.warning(self, "Error", str(message))
         else:
-            status, message = update_bill_entry(self.bill_id, rent_month, book_number, bill_number, purpose_for,
+            status, message = update_bill_entry(self.bill_id, bill_for_month_of, book_number, bill_number, purpose_for,
                                                 rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
                                                 received_date, extra_payment, agreement_date, notes)
             if status:
@@ -725,7 +771,7 @@ class BillEntry(BaseWindow):
 
         self.populate_table()
         self.setWindowTitle("Bill Entry - Add")
-        # print(rent_month)
+        # print(bill_for_month_of)
         # print(book_number)
         # print(bill_number)
         # print(house_number)
@@ -742,7 +788,7 @@ class BillEntry(BaseWindow):
         # print(notes)
 
     def validate_at_the_rate_of(self):
-        input_text = self.amount_line.text()
+        input_text = self.at_the_rate_of.text()
 
         if input_text.isdigit() and int(input_text) > 0:
             return True
@@ -791,7 +837,7 @@ class BillEntry(BaseWindow):
         room_number = self.room_number_combo.currentText()
         room_number_first_set, room_number_second_set = split_string(room_number, 21)
 
-        data = {"rent_month": self.rent_month_date.date().toString("MMM-yyyy"),
+        data = {"bill_for_month_of": self.bill_for_month_of.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
                 "bill_number": self.bill_number_line.text(),
                 "purpose_for": self.purpose_line.text(),
@@ -802,7 +848,7 @@ class BillEntry(BaseWindow):
                 "total_paise": "00.",
                 "@": "@",
                 "per_month": "per month",
-                "at_the_rate_of": "Rs. " + self.amount_line.text() + "/-",
+                "at_the_rate_of": "Rs. " + self.at_the_rate_of.text() + "/-",
                 "received_date_with_ordinal": received_date_with_ordinal,
                 "received_month": received_month,
                 "received_year": received_year,
@@ -820,7 +866,7 @@ class BillEntry(BaseWindow):
 
         # Define positions for the text fields on the image (these will need to be adjusted)
         positions = {
-            "rent_month": (600, 830),
+            "bill_for_month_of": (600, 830),
             "book_number": (1165, 830),
             "bill_number": (1500, 830),
             "purpose_for": (230, 940),
