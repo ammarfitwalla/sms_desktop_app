@@ -1,0 +1,53 @@
+-- MySQL dump 10.13  Distrib 8.0.20, for Win64 (x86_64)
+--
+-- Host: localhost    Database: societydb
+-- ------------------------------------------------------
+-- Server version	8.0.20
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `cts`
+--
+
+DROP TABLE IF EXISTS `cts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cts` (
+  `cts_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `house_id` int NOT NULL,
+  `cts_number` varchar(255) NOT NULL,
+  PRIMARY KEY (`cts_id`),
+  UNIQUE KEY `id` (`cts_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=80 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cts`
+--
+
+LOCK TABLES `cts` WRITE;
+/*!40000 ALTER TABLE `cts` DISABLE KEYS */;
+INSERT INTO `cts` VALUES (5,4,'602/37'),(6,4,'602/36'),(7,4,'602/35'),(10,4,'602/33'),(11,4,'602/31'),(12,4,'602/29'),(13,4,'602/27'),(14,4,'602/25'),(15,4,'602/23'),(16,4,'602/21'),(17,4,'602/19'),(18,4,'602/20'),(19,4,'602/22'),(20,4,'602/24'),(21,4,'602/22 & 24'),(22,4,'602/26'),(23,4,'602/28'),(24,4,'602/30'),(25,4,'602/32'),(26,4,'602/34'),(27,5,'602/49'),(28,5,'602/50'),(29,5,'602/52'),(30,5,'602/54'),(31,5,'602/56'),(32,5,'602/58 (part)'),(33,5,'602/48'),(34,5,'602/51'),(35,5,'602/53'),(36,5,'602/55'),(37,5,'602/57'),(38,6,'602/45'),(39,6,'602/43'),(40,6,'602/41'),(41,6,'602/38'),(42,6,'602/39'),(43,6,'602/40'),(44,6,'602/42'),(45,6,'602/44'),(46,6,'602/46'),(47,6,'602/47'),(48,7,'602/6'),(49,7,'602/5'),(50,7,'602/4'),(51,7,'602/3'),(52,8,'602 (part)'),(53,9,'602/2'),(54,9,'602/1'),(55,9,'602/7'),(56,9,'602/8'),(57,9,'602/9'),(58,9,'602/10'),(59,9,'602/11'),(60,9,'602/12'),(61,9,'602/13'),(62,9,'602/14'),(63,9,'602/15'),(64,9,'602/16'),(65,9,'602/17'),(66,9,'602/18'),(67,10,'600/6'),(68,10,'600/7'),(69,10,'600/8'),(70,10,'600/9'),(71,10,'600/10(part)'),(72,10,'600/11'),(73,10,'600/16'),(74,10,'600/15'),(75,10,'600/14'),(76,10,'600/13'),(77,11,'600/2'),(78,11,'600/3'),(79,11,'600/1');
+/*!40000 ALTER TABLE `cts` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2024-02-13 17:07:14
