@@ -84,6 +84,7 @@ class BillEntry(BaseWindow):
         # Row 2
         self.bill_for_month_of_label = QLabel('Bill For Month Of')
         self.bill_for_month_of = QDateEdit()
+        # self.bill_for_month_of.setCalendarPopup(True)  # Enable calendar popup
         self.bill_for_month_of.setDisplayFormat('MMM-yyyy')
         self.bill_for_month_of.setDate(QDate.currentDate())
         layout.addWidget(self.bill_for_month_of_label, 0, 0)
@@ -136,7 +137,8 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.cts_number_line, 1, 5)
 
         layout.addWidget(self.tenant_name_label, 2, 0)
-        layout.addWidget(self.tenant_name_combo, 2, 1, 1, 3)
+        # layout.addWidget(self.tenant_name_combo, 2, 1, 1, 1)
+        layout.addWidget(self.tenant_name_combo, 2, 1)
 
         # Row 3
         self.purpose_label = QLabel('Purpose For')
