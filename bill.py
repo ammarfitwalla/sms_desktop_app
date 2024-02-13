@@ -460,8 +460,6 @@ class BillEntry(BaseWindow):
             key: self.bill_entry_table.item(row, col).text() if self.bill_entry_table.item(row, col) is not None else ""
             for key, col in columns.items()}
 
-        print(data)
-
         # Fetch the bill_id
         data['BILL_ID'] = self.bill_entry_table.item(row, columns['BILL_ID']).data(
             Qt.UserRole) if self.bill_entry_table.item(row, columns['BILL_ID']) else None
