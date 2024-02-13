@@ -38,14 +38,44 @@ class MasterEntry(BaseWindow):
     def init_ui(self):
         main_layout = QVBoxLayout(self)
 
-        # Create a toolbar
-        toolbar = QToolBar("Main Toolbar")
-        # Add 'Switch to Master' action
-        switch_to_master_action = QAction('Go to Bill Entry', self)
+        # Create a menu bar
+        menubar = QMenuBar(self)
+        menubar.setStyleSheet(
+            """
+            QMenuBar {
+                background-color: white;
+                border-bottom: 1px solid #c1c1c1;
+            }
+            QMenuBar::item {
+                padding: 4px 8px;
+            }
+            QMenuBar::item:selected {
+                background-color: #c1c1c1;
+                color: black;
+            }
+            """
+        )
+
+        # Create a File menu
+        file_menu = menubar.addMenu('File')
+        about_menu = menubar.addMenu('About')
+        help_menu = menubar.addMenu('Help')
+
+        # Add 'Switch to Master' action under File menu
+        switch_to_master_action = QAction('Bill Entry', self)
         switch_to_master_action.triggered.connect(self.switch_to_bill)
-        toolbar.addAction(switch_to_master_action)
-        # Add the toolbar to the main layout
-        main_layout.addWidget(toolbar)
+        file_menu.addAction(switch_to_master_action)
+
+        switch_to_reports_action = QAction('Reports', self)
+        # switch_to_reports_action.triggered.connect(self.close)
+        file_menu.addAction(switch_to_reports_action)
+
+        # Add 'Exit' action under File menu
+        exit_action = QAction('Exit', self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        main_layout.setMenuBar(menubar)
 
         # Create a grid layout for the rest of the UI components
         # layout = QGridLayout()
@@ -75,7 +105,7 @@ class MasterEntry(BaseWindow):
         self.others_rb = QRadioButton("Others", self)
 
         # --------------------------- SUBMIT BUTTON --------------------------- #
-        self.submit_btn = QPushButton("Submit", self)
+        self.submit_btn = QPushButton("Save", self)
         self.submit_btn.clicked.connect(self.handle_submission)
 
         # --------------------------- CLEAR FORM BUTTON --------------------------- #

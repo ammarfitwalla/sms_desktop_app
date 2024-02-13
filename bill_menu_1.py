@@ -39,43 +39,22 @@ class BillEntry(BaseWindow):
         main_layout = QVBoxLayout(self)
 
         # Create a menu bar
-        menubar = QMenuBar(self)
-        menubar.setStyleSheet(
-            """
-            QMenuBar {
-                background-color: white;
-                border-bottom: 1px solid #c1c1c1;
-            }
-            QMenuBar::item {
-                padding: 4px 8px;
-            }
-            QMenuBar::item:selected {
-                background-color: #c1c1c1;
-                color: black;
-            }
-            """
-        )
+        menubar = QMenuBar()
 
         # Create a File menu
         file_menu = menubar.addMenu('File')
-        about_menu = menubar.addMenu('About')
-        help_menu = menubar.addMenu('Help')
 
         # Add 'Switch to Master' action under File menu
-        switch_to_master_action = QAction('Master Entry', self)
+        switch_to_master_action = QAction('Go to Master Entry', self)
         switch_to_master_action.triggered.connect(self.switch_to_master)
         file_menu.addAction(switch_to_master_action)
-
-        switch_to_reports_action = QAction('Reports', self)
-        # switch_to_reports_action.triggered.connect(self.close)
-        file_menu.addAction(switch_to_reports_action)
 
         # Add 'Exit' action under File menu
         exit_action = QAction('Exit', self)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
-        main_layout.setMenuBar(menubar)
+        main_layout.addWidget(menubar)
 
         # Create a grid layout for the rest of the UI components
         layout = QGridLayout()
