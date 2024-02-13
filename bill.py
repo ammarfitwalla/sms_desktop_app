@@ -460,6 +460,8 @@ class BillEntry(BaseWindow):
             key: self.bill_entry_table.item(row, col).text() if self.bill_entry_table.item(row, col) is not None else ""
             for key, col in columns.items()}
 
+        print(data)
+
         # Fetch the bill_id
         data['BILL_ID'] = self.bill_entry_table.item(row, columns['BILL_ID']).data(
             Qt.UserRole) if self.bill_entry_table.item(row, columns['BILL_ID']) else None
@@ -683,39 +685,40 @@ class BillEntry(BaseWindow):
         if current_tenant_id:
             room_name, room_id = get_room_data_by_tenant_id(current_tenant_id)
             self.room_number_combo.addItem(room_name, room_id)
-            last_bill_data = get_last_bill_data_by_tenant_id(current_tenant_id)
-            if last_bill_data:
-                # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
-                set_data = {'RECEIVED_DATE': last_bill_data['received_date'].strftime('%Y-%m-%d'),
-                            'RENT_FROM': last_bill_data['rent_from'], 'BOOK_NO': last_bill_data['book_number'],
-                            'RENT_TO': last_bill_data['rent_to'], 'AT_THE_RATE_OF': last_bill_data['at_the_rate_of'],
-                            'TOTAL_MONTHS': last_bill_data['total_months'],
-                            'BILL_NO': last_bill_data['bill_number'],
-                            'BILL_FOR_MONTH_OF': last_bill_data['bill_for_month_of'],
-                            'TOTAL_AMOUNT': last_bill_data['total_rupees'],
-                            'EXTRA_PAYMENT': last_bill_data['extra_payment'], 'NOTES': last_bill_data['notes'],
-                            'PURPOSE_FOR': last_bill_data['purpose_for'],
-                            'AGREEMENT_DATE': last_bill_data['agreement_date'].strftime('%Y-%m-%d') if
-                            last_bill_data['agreement_date'] else ""}
-                self.set_data_to_form(set_data)
-            else:
-                current_date = QDate.currentDate()
-                self.bill_for_month_of.setDate(current_date)
-                self.rent_from_date.setDate(current_date)
-                self.received_date.setDate(current_date)
-                self.agreement_date.setDate(current_date)
-                self.book_number_line.clear()
-                self.bill_number_line.clear()
-                self.purpose_line.clear()
-                self.at_the_rate_of.clear()
-                self.total_rupees_line.clear()
-                self.extra_payment_line.setText(str(0))
-                self.notes_text.clear()
-                self.update_rent_to_date()
-                self.update_total_months()
-                self.update_total_rupees()
-                self.is_alive_checkbox.setChecked(True)
-                self.agreement_date.clear()
+            if self.operation == 'insert':
+                last_bill_data = get_last_bill_data_by_tenant_id(current_tenant_id)
+                if last_bill_data:
+                    # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
+                    set_data = {'RECEIVED_DATE': last_bill_data['received_date'].strftime('%Y-%m-%d'),
+                                'RENT_FROM': last_bill_data['rent_from'], 'BOOK_NO': last_bill_data['book_number'],
+                                'RENT_TO': last_bill_data['rent_to'], 'AT_THE_RATE_OF': last_bill_data['at_the_rate_of'],
+                                'TOTAL_MONTHS': last_bill_data['total_months'],
+                                'BILL_NO': last_bill_data['bill_number'],
+                                'BILL_FOR_MONTH_OF': last_bill_data['bill_for_month_of'],
+                                'TOTAL_AMOUNT': last_bill_data['total_rupees'],
+                                'EXTRA_PAYMENT': last_bill_data['extra_payment'], 'NOTES': last_bill_data['notes'],
+                                'PURPOSE_FOR': last_bill_data['purpose_for'],
+                                'AGREEMENT_DATE': last_bill_data['agreement_date'].strftime('%Y-%m-%d') if
+                                last_bill_data['agreement_date'] else ""}
+                    self.set_data_to_form(set_data)
+                else:
+                    current_date = QDate.currentDate()
+                    self.bill_for_month_of.setDate(current_date)
+                    self.rent_from_date.setDate(current_date)
+                    self.received_date.setDate(current_date)
+                    self.agreement_date.setDate(current_date)
+                    self.book_number_line.clear()
+                    self.bill_number_line.clear()
+                    self.purpose_line.clear()
+                    self.at_the_rate_of.clear()
+                    self.total_rupees_line.clear()
+                    self.extra_payment_line.setText(str(0))
+                    self.notes_text.clear()
+                    self.update_rent_to_date()
+                    self.update_total_months()
+                    self.update_total_rupees()
+                    self.is_alive_checkbox.setChecked(True)
+                    self.agreement_date.clear()
         else:
             self.room_number_combo.clear()
 
