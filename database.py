@@ -767,9 +767,7 @@ def delete_bill_by_id(bill_id):
     try:
         delete_query = "DELETE FROM bills WHERE bill_id = %s"
         cursor.execute(delete_query, (bill_id,))
-
-        connection.commit()  # Committing the transaction
-        print(f"Bill with ID {bill_id} has been deleted.")
+        connection.commit()
 
         return True, 'Success'
 
@@ -780,7 +778,6 @@ def delete_bill_by_id(bill_id):
     finally:
         cursor.close()
         connection.close()
-        print("MySQL connection is closed")
 
 
 def get_tenant_name_by_bill_id(bill_id):

@@ -1,7 +1,5 @@
 import os
 import sys
-import time
-
 from PyQt5 import QtCore
 import master_entry
 from database import *
@@ -255,27 +253,11 @@ class BillEntry(BaseWindow):
         self.clear_button.clicked.connect(self.clear_form)
         buttons_layout.addWidget(self.clear_button)
 
-        self.edit_button = QPushButton('Edit')
-        # self.edit_button.setIcon(QIcon(self.pen_icon_path))
-        # self.edit_button.setIconSize(QSize(20, 20))
-        self.edit_button.clicked.connect(self.edit_record)
-        buttons_layout.addWidget(self.edit_button)
-        self.edit_button.setDisabled(True)
-
         # Create Print Button
         self.print_button = QPushButton('Print')
         self.print_button.clicked.connect(self.print_data)  # You need to define the print_data method
-        # self.print_button.setIcon(QIcon(self.printer_icon_path))
-        # self.print_button.setIconSize(QSize(20, 20))
         buttons_layout.addWidget(self.print_button)
         self.print_button.setDisabled(True)
-
-        self.delete_button = QPushButton('Delete')
-        self.delete_button.clicked.connect(self.delete_record)
-        # self.delete_button.setIcon(QIcon(self.delete_icon_path))
-        # self.delete_button.setIconSize(QSize(20, 20))
-        buttons_layout.addWidget(self.delete_button)
-        self.delete_button.setDisabled(True)
 
         layout.addLayout(buttons_layout, 7, 1, 1, 5)  # Assuming row 7 is where you want the buttons
 
@@ -299,7 +281,7 @@ class BillEntry(BaseWindow):
         self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
                                    "Rent\nFrom", "Rent\nTo", "@", "Total\nMonths", "Total\nAmount",
                                    "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
-                                   "Mobile", "DoD", "Agreement\nDate", "Notes", "Gender"]
+                                   "Mobile", "DoD", "Agreement\nDate", "Notes", "Gender", "Edit", "Print", "Delete"]
 
         self.bill_entry_table.setColumnCount(len(self.bill_table_columns))
         self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
@@ -320,7 +302,7 @@ class BillEntry(BaseWindow):
         name_column_index = self.bill_table_columns.index("Name")
         name_column_width = 100
         self.bill_entry_table.setColumnWidth(name_column_index, name_column_width)
-        self.bill_entry_table.itemClicked.connect(self.print_record)
+        self.bill_entry_table.itemClicked.connect(self.show_selected_row_data)
 
         self.populate_table()
         self.update_total_months()
@@ -423,6 +405,15 @@ class BillEntry(BaseWindow):
                           len(self.bill_table_columns) - 1]
         for col in button_columns:
             self.bill_entry_table.setColumnWidth(col, 50)
+
+    def print_record(self, row):
+        data = self.get_data_from_row(row)
+        self.set_data_to_form(data)
+        self.make_form_readonly()
+        self.cts_number_line.setDisabled(True)
+        self.operation = 'print'
+        self.setWindowTitle("Bill Entry - Print")
+        self.print_button.setEnabled(True)
 
     def make_form_readonly(self):
         # Iterate over all the form fields to set them to read-only
@@ -549,44 +540,25 @@ class BillEntry(BaseWindow):
             if notes:
                 self.notes_text.setText(notes)
 
-    def print_record(self, row):
-        data = self.get_data_from_row(row.row())
-        self.set_data_to_form(data)
-        self.make_form_readonly()
-        self.cts_number_line.setDisabled(True)
-        self.operation = 'print'
-        self.setWindowTitle("Bill Entry - Print")
-        self.print_button.setEnabled(True)
-        self.delete_button.setEnabled(True)
-        self.edit_button.setEnabled(True)
-
-    # def edit_record(self, row):
-    #     if self.operation == 'print':
-    #         self.make_form_editable()
-    #         self.print_button.setDisabled(True)
-    #     data = self.get_data_from_row(row.row())
-    #     self.set_data_to_form(data)
-    #     self.house_number_combo.setDisabled(True)
-    #     self.tenant_name_combo.setDisabled(True)
-    #     self.room_number_combo.setDisabled(True)
-    #     self.cts_number_line.setDisabled(True)
-    #
-    #     self.operation = 'update'
-    #     self.setWindowTitle("Bill Entry - Edit")
-
     def edit_record(self, row):
-        self.make_form_editable()
-        self.print_button.setDisabled(True)
+        if self.operation == 'print':
+            self.make_form_editable()
+            self.print_button.setDisabled(True)
+        data = self.get_data_from_row(row)
+        self.set_data_to_form(data)
         self.house_number_combo.setDisabled(True)
         self.tenant_name_combo.setDisabled(True)
         self.room_number_combo.setDisabled(True)
         self.cts_number_line.setDisabled(True)
+
         self.operation = 'update'
         self.setWindowTitle("Bill Entry - Edit")
 
-    def delete_record(self):
+    def delete_record(self, row):
+        bill_id_item = self.bill_entry_table.item(row, 0)
+        bill_id = bill_id_item.data(Qt.UserRole) if bill_id_item else None
 
-        if self.bill_id is None:
+        if bill_id is None:
             QMessageBox.warning(self, "Error", "Could not find the bill ID for row.")
             return
 
@@ -595,11 +567,9 @@ class BillEntry(BaseWindow):
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            success, message = delete_bill_by_id(self.bill_id)
+            success, message = delete_bill_by_id(bill_id)
             if success:
-                # time.sleep(1)
                 self.populate_table()
-                self.clear_form()
                 QMessageBox.information(self, "Success", "Successfully deleted the record.")
             else:
                 QMessageBox.warning(self, "Error", f"Error deleting the record: {message}")
@@ -609,8 +579,6 @@ class BillEntry(BaseWindow):
     def clear_form(self):
         self.make_form_editable()
         self.print_button.setDisabled(True)
-        self.edit_button.setDisabled(True)
-        self.delete_button.setDisabled(True)
         self.rent_to_date.setReadOnly(True)
         self.house_number_combo.setCurrentIndex(0)
         self.tenant_name_combo.setCurrentIndex(0)
@@ -841,9 +809,7 @@ class BillEntry(BaseWindow):
                                                 received_date, extra_payment, agreement_date, notes)
             if status:
                 QMessageBox.information(self, "Success", "Bill Data Updated successfully!")
-                # self.clear_form()
-                self.make_form_readonly()
-                self.print_button.setEnabled(True)
+                self.clear_form()
             else:
                 QMessageBox.warning(self, "Error", str(message))
 
