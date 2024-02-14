@@ -9,8 +9,8 @@ if __name__ == '__main__':
     login_window = LoginApp()
 
     if login_window.exec_() == LoginApp.Accepted:  # If login is successful
-        BillEntry()
-
+        window = BillEntry()
+        window.show()
     app.exec_()
     
 
