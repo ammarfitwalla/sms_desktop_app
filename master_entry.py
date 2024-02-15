@@ -351,7 +351,6 @@ class MasterEntry(BaseWindow):
         tenant_dod = self.master_entry_table.item(self.row_idx, 5).text()
         notes = self.master_entry_table.item(self.row_idx, 6).text()
         tenant_gender = self.master_entry_table.item(self.row_idx, 7).text()
-        print(tenant_dod)
 
         self.old_house_number = house_number
         self.old_cts_number = cts_number
