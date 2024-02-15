@@ -23,12 +23,10 @@ class MasterEntry(BaseWindow):
         self.showMaximized()
 
     def set_default_state(self):
-        self.operation = "insert"
+        self.row_idx = None
         self.current_row = None
+        self.operation = "insert"
         self.setWindowTitle("Master Entry - Add")
-
-    def switch_to_master(self):
-        pass  # Do nothing since we are already in the master page
 
     def switch_to_bill(self):
         self.close()
@@ -112,6 +110,14 @@ class MasterEntry(BaseWindow):
         self.clear_form_btn = QPushButton("Clear Form", self)
         self.clear_form_btn.clicked.connect(self.clear_form)
 
+        # --------------------------- EDIT FORM BUTTON --------------------------- #
+        # self.edit_btn = QPushButton("Edit", self)
+        # self.edit_btn.clicked.connect(self.clear_form)
+
+        # --------------------------- DELETE ENTRY BUTTON --------------------------- #
+        self.delete_btn = QPushButton("Delete", self)
+        self.delete_btn.clicked.connect(self.delete_entry)
+
         # --------------------------- ICONS PATH --------------------------- #
         self.script_directory = os.path.dirname(os.path.abspath(__file__))
         self.pen_icon_path = os.path.join(self.script_directory, 'icons', 'pen_icon.png')
@@ -139,17 +145,22 @@ class MasterEntry(BaseWindow):
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.submit_btn)
         button_layout.addWidget(self.clear_form_btn)
+        # button_layout.addWidget(self.edit_btn)
+        button_layout.addWidget(self.delete_btn)
         layout.addRow(button_layout)
 
         layout.addRow(QLabel("Search"), self.search_bar)
         self.search_bar.textChanged.connect(self.filter_table)
 
         self.master_entry_table = QTableWidget(self)
-        self.master_entry_table.setColumnCount(10)  # Number of columns based on the fields you have
-        self.master_entry_table.setHorizontalHeaderLabels(["House No.", "Room No.", "CTS No.", "Name",
-                                                           "Mobile", "DoD", "Notes", "Gender", "Edit", "Delete"])
+        self.master_entry_table_columns = ["House No.", "Room No.", "CTS No.", "Name",
+                                           "Mobile", "DoD", "Notes", "Gender"]
+        self.master_entry_table.setColumnCount(len(self.master_entry_table_columns))  # Number of columns based on the fields you have
+        self.master_entry_table.setHorizontalHeaderLabels(self.master_entry_table_columns)
         layout.addRow(self.master_entry_table)
+        self.master_entry_table.setSortingEnabled(True)
         self.master_entry_table.setShowGrid(True)  # Enable the display of grid lines between cells
+        self.master_entry_table.itemClicked.connect(self.edit_entry)
 
         # Use setStyleSheet to define the grid line color and style
         self.master_entry_table.setStyleSheet("gridline-color: rgb(192, 192, 192);")  # Light grey grid lines
@@ -202,11 +213,11 @@ class MasterEntry(BaseWindow):
                 tenant_dod = self.tenant_dod_input.date().toString("yyyy-MM-dd")
             notes = self.notes_input.text()
             if self.male_rb.isChecked():
-                tenant_gender = "Male"
+                tenant_gender = "M"
             elif self.female_rb.isChecked():
-                tenant_gender = "Female"
+                tenant_gender = "F"
             else:
-                tenant_gender = "Others"
+                tenant_gender = "O"
 
             if self.operation == "insert":
                 status, message = database.insert_master_entry(house_number, cts_number, room_number, tenant_name,
@@ -280,21 +291,21 @@ class MasterEntry(BaseWindow):
                 item = self.master_entry_table.item(row, 5)
                 item.setText(entry['tenant_dod'].strftime('%d-%m-%Y'))
 
-            edit_btn = QPushButton(self)
-            edit_btn.setIcon(QIcon(self.pen_icon_path))
-            edit_btn.setIconSize(QSize(20, 20))
-            edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
-            self.master_entry_table.setCellWidget(row, 8, edit_btn)
-            edit_btn.setFixedWidth(50)
-            self.master_entry_table.setColumnWidth(8, 50)
-
-            delete_btn = QPushButton(self)
-            delete_btn.setIcon(QIcon(self.delete_icon_path))
-            delete_btn.setIconSize(QSize(30, 30))
-            delete_btn.clicked.connect(lambda checked, r=row: self.delete_entry(r))
-            self.master_entry_table.setCellWidget(row, 9, delete_btn)
-            delete_btn.setFixedWidth(50)
-            self.master_entry_table.setColumnWidth(9, 50)
+            # edit_btn = QPushButton(self)
+            # edit_btn.setIcon(QIcon(self.pen_icon_path))
+            # edit_btn.setIconSize(QSize(20, 20))
+            # edit_btn.clicked.connect(lambda checked, r=row: self.edit_entry(r))
+            # self.master_entry_table.setCellWidget(row, 8, edit_btn)
+            # edit_btn.setFixedWidth(50)
+            # self.master_entry_table.setColumnWidth(8, 50)
+            #
+            # delete_btn = QPushButton(self)
+            # delete_btn.setIcon(QIcon(self.delete_icon_path))
+            # delete_btn.setIconSize(QSize(30, 30))
+            # delete_btn.clicked.connect(lambda checked, r=row: self.delete_entry(r))
+            # self.master_entry_table.setCellWidget(row, 9, delete_btn)
+            # delete_btn.setFixedWidth(50)
+            # self.master_entry_table.setColumnWidth(9, 50)
 
         columns_to_adjust = [0, 1, 2, 4, 5, 6, 7]  # Adjust indices as needed
 
@@ -331,14 +342,16 @@ class MasterEntry(BaseWindow):
 
     def edit_entry(self, row):
         # Fetch data from the selected row
-        house_number = self.master_entry_table.item(row, 0).text()
-        room_number = self.master_entry_table.item(row, 1).text()
-        cts_number = self.master_entry_table.item(row, 2).text()
-        tenant_name = self.master_entry_table.item(row, 3).text()
-        tenant_mobile = self.master_entry_table.item(row, 4).text()
-        tenant_dod = self.master_entry_table.item(row, 5).text()
-        notes = self.master_entry_table.item(row, 6).text()
-        tenant_gender = self.master_entry_table.item(row, 7).text()
+        self.row_idx = row.row()
+        house_number = self.master_entry_table.item(self.row_idx, 0).text()
+        room_number = self.master_entry_table.item(self.row_idx, 1).text()
+        cts_number = self.master_entry_table.item(self.row_idx, 2).text()
+        tenant_name = self.master_entry_table.item(self.row_idx, 3).text()
+        tenant_mobile = self.master_entry_table.item(self.row_idx, 4).text()
+        tenant_dod = self.master_entry_table.item(self.row_idx, 5).text()
+        notes = self.master_entry_table.item(self.row_idx, 6).text()
+        tenant_gender = self.master_entry_table.item(self.row_idx, 7).text()
+        print(tenant_dod)
 
         self.old_house_number = house_number
         self.old_cts_number = cts_number
@@ -358,12 +371,11 @@ class MasterEntry(BaseWindow):
         else:
             self.is_alive_checkbox.setChecked(False)
             self.tenant_dod_input.setDate(QDate.fromString(tenant_dod, "dd-MM-yyyy"))
-            self.tenant_dod_input.setDate(QDate.currentDate())
 
         self.notes_input.setText(notes)
-        if tenant_gender == "Male":
+        if tenant_gender == "M":
             self.male_rb.setChecked(True)
-        elif tenant_gender == 'Female':
+        elif tenant_gender == 'F':
             self.female_rb.setChecked(True)
         else:
             self.others_rb.setChecked(True)
@@ -372,22 +384,19 @@ class MasterEntry(BaseWindow):
         self.current_row = row
         self.setWindowTitle("Master Entry - Edit")
 
-    def delete_entry(self, row):
-        # Confirmation Dialog
-        choice = QMessageBox.question(self, "Confirmation", "Are you sure you want to delete this entry?",
+    def delete_entry(self):
+        choice = QMessageBox.question(self, "Confirmation", "Are you sure you want to delete this Tenant?",
                                       QMessageBox.Yes | QMessageBox.No)
-
         if choice == QMessageBox.No:
             return
-
-        house_number = self.master_entry_table.item(row, 0).text()
-        room_number = self.master_entry_table.item(row, 1).text()
-        cts_number = self.master_entry_table.item(row, 2).text()
-
         try:
+            house_number = self.master_entry_table.item(self.row_idx, 0).text()
+            room_number = self.master_entry_table.item(self.row_idx, 1).text()
+            cts_number = self.master_entry_table.item(self.row_idx, 2).text()
             database.delete_master_entry(house_number, cts_number, room_number)
-            QMessageBox.information(self, "Success", "Tenant data deleted successfully!")
             self.populate_table()
+            self.clear_form()
+            QMessageBox.information(self, "Success", "Tenant deleted successfully!")
         except Exception as e:
             QMessageBox.critical(self, "Error", "Data not deleted!\nError: " + str(e))
 

@@ -1,0 +1,2 @@
+1. to make the application of the script
+> pyinstaller --onefile --noconsole --add-data "icons/*;icons/" --add-data "images/*;images/" main.py

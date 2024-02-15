@@ -93,8 +93,8 @@ def insert_house(cursor, house_number):
     if not house:
         cursor.execute("INSERT INTO Houses (house_number) VALUES (%s)", (house_number,))
         return cursor.lastrowid
-    else:
-        return house[0]
+
+    return house[0]
 
 
 def insert_cts(cursor, house_id, cts_number):
@@ -104,8 +104,8 @@ def insert_cts(cursor, house_id, cts_number):
     if not cts:
         cursor.execute("INSERT INTO CTS (cts_number, house_id) VALUES (%s, %s)", (cts_number, house_id))
         return cursor.lastrowid
-    else:
-        return cts[0]
+
+    return cts[0]
 
 
 def insert_room(cursor, house_id, cts_id, room_number):
@@ -117,8 +117,8 @@ def insert_room(cursor, house_id, cts_id, room_number):
         cursor.execute("INSERT INTO Rooms (room_number, cts_id, house_id) VALUES (%s, %s, %s)",
                        (room_number, cts_id, house_id))
         return cursor.lastrowid
-    else:
-        return None
+
+    return None
 
 
 def insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, current_tenant, room_id):
@@ -319,8 +319,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                         connection.close()
 
                         return True, "Data Updated Successfully!"
-                    else:
-                        return False, "Room Number already exists!"
+
+                    return False, "Room Number already exists!"
 
         # --------------------------------- IF CTS NUMBER IS UPDATED --------------------------------- #
         if old_house_number == house_number and old_cts_number != cts_number and old_room_number == room_number:
@@ -376,8 +376,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                     connection.close()
 
                     return True, "Data Updated Successfully!"
-                else:
-                    return False, "Room Number already exists!"
+
+                return False, "Room Number already exists!"
 
         # --------------------------------- IF ROOM NUMBER IS UPDATED --------------------------------- #
         if old_house_number == house_number and old_cts_number == cts_number and old_room_number != room_number:
@@ -406,8 +406,8 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
                 connection.close()
 
                 return True, "Data Updated Successfully!"
-            else:
-                return False, "Room Number already exists!"
+
+            return False, "Room Number already exists!"
 
     except:
         connection.rollback()
@@ -592,7 +592,6 @@ def get_adjacent_from_and_to_dates(house_number, room_number, cts_number):
             return None, None, None
 
         previous_rent_from_date, previous_rent_to_date = result[0]
-        current_rent_from_date, current_rent_to_date = result[1]
         next_rent_from_date, next_rent_to_date = result[2]
 
         return previous_rent_from_date, previous_rent_to_date, next_rent_from_date, next_rent_to_date
@@ -687,15 +686,14 @@ def fetch_data_for_edit_record(bill_id):
 
         if result:
             return result
-        else:
-            return None, None
+        return None, None
 
     except mysql.connector.Error as err:
         print("Error:", str(err))
         return None, None
 
 
-def get_bill_table_data():
+def get_all_bill_entries():
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
     query = """
@@ -753,8 +751,7 @@ def get_last_bill_data_by_tenant_id(tenant_id):
 
         if result:
             return result
-        else:
-            return None
+        return None
 
     except mysql.connector.Error as err:
         print("Error:", str(err))
@@ -781,6 +778,12 @@ def delete_bill_by_id(bill_id):
 
 
 def get_tenant_name_by_bill_id(bill_id):
+    """
+    Retrieve the tenant name based on the given bill_id.
+    :param bill_id: (int) The ID of the bill.
+    :return: (str or bool) The name of the tenant associated with the given bill_id,
+             or False if an error occurs.
+    """
     connection = create_connection()
     cursor = connection.cursor()
     try:
@@ -833,6 +836,11 @@ def get_room_data_by_tenant_id(tenant_id):
 
 
 def get_tenant_name_by_tenant_id(tenant_id):
+    """
+    This method takes tenant_id as an input and returns the tenant_name
+    :param tenant_id: int
+    :return: str
+    """
     connection = create_connection()
     cursor = connection.cursor()
 

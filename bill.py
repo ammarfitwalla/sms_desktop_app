@@ -1,21 +1,18 @@
 import os
 import sys
-import time
-
+from datetime import datetime, date
 from PyQt5 import QtCore
+from PyQt5.QtCore import QDate, Qt, QSize
+from PyQt5.QtGui import QPainter, QImage, QFont, QIcon, QIntValidator
+from PyQt5.QtPrintSupport import QPrinter
+from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdit, QPushButton, \
+    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
+    QMenuBar, QCheckBox, QSizePolicy
+
+from utils import split_string, get_date_month_year, convert_date_string
 import master_entry
 from database import *
 from base_class import BaseWindow
-from PyQt5.QtCore import QDate, Qt, QSize
-from datetime import datetime, date
-from PyQt5.QtGui import QPainter, QImage, QFont, QIcon, QIntValidator
-from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
-from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QComboBox, QLineEdit, QDateEdit, QTextEdit, QPushButton, \
-    QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QHeaderView, QTableWidgetItem, QAction, QWidget, \
-    QMenuBar, QToolBar, QCheckBox, QSizePolicy
-from PyQt5.QtGui import QPixmap
-
-from utils import split_string, get_date_month_year, convert_date_string
 
 
 class BillEntry(BaseWindow):
@@ -60,8 +57,8 @@ class BillEntry(BaseWindow):
 
         # Create a File menu
         file_menu = menubar.addMenu('File')
-        about_menu = menubar.addMenu('About')
-        help_menu = menubar.addMenu('Help')
+        menubar.addMenu('About')
+        menubar.addMenu('Help')
 
         # Add 'Switch to Master' action under File menu
         switch_to_master_action = QAction('Master Entry', self)
@@ -337,11 +334,8 @@ class BillEntry(BaseWindow):
         search_term = self.search_bar.text().lower()
         self.populate_table(search_term)
 
-    def show_selected_row_data(self, item):
-        data = self.get_data_from_row(item.row())
-
     def populate_table(self, search_term=''):
-        bill_entries = get_bill_table_data()
+        bill_entries = get_all_bill_entries()
 
         # Filter the entries based on the search term
         if search_term:
@@ -574,7 +568,7 @@ class BillEntry(BaseWindow):
     #     self.operation = 'update'
     #     self.setWindowTitle("Bill Entry - Edit")
 
-    def edit_record(self, row):
+    def edit_record(self):
         self.make_form_editable()
         self.print_button.setDisabled(True)
         self.house_number_combo.setDisabled(True)
@@ -709,7 +703,7 @@ class BillEntry(BaseWindow):
         rooms = get_rooms_data_by_house_id(current_house_id)
         self.tenant_name_combo.clear()
         for room in rooms:
-            room_name, room_id = room[0], room[1]
+            room_id = room[1]
             tenant_name, tenant_id = get_tenants_data_by_room_id(room_id)
             self.tenant_name_combo.addItem(tenant_name, tenant_id)
 
@@ -725,7 +719,8 @@ class BillEntry(BaseWindow):
                     # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
                     set_data = {'RECEIVED_DATE': last_bill_data['received_date'].strftime('%Y-%m-%d'),
                                 'RENT_FROM': last_bill_data['rent_from'], 'BOOK_NO': last_bill_data['book_number'],
-                                'RENT_TO': last_bill_data['rent_to'], 'AT_THE_RATE_OF': last_bill_data['at_the_rate_of'],
+                                'RENT_TO': last_bill_data['rent_to'],
+                                'AT_THE_RATE_OF': last_bill_data['at_the_rate_of'],
                                 'TOTAL_MONTHS': last_bill_data['total_months'],
                                 'BILL_NO': last_bill_data['bill_number'],
                                 'BILL_FOR_MONTH_OF': last_bill_data['bill_for_month_of'],
@@ -855,8 +850,8 @@ class BillEntry(BaseWindow):
 
         if input_text.isdigit() and int(input_text) > 0:
             return True
-        else:
-            return False
+
+        return False
 
     def validate_total_months(self):
         return True if int(self.total_months_line.text()) > 0 else False
@@ -896,8 +891,7 @@ class BillEntry(BaseWindow):
         else:
             rent_from_to = rent_from + "      to      " + rent_to
 
-        room_number = self.room_number_combo.currentText()
-        room_number_first_set, room_number_second_set = split_string(room_number, 21)
+        room_number_first_set, room_number_second_set = split_string(self.room_number_combo.currentText(), 21)
 
         data = {"bill_for_month_of": self.bill_for_month_of.date().toString("MMM-yyyy"),
                 "book_number": self.book_number_line.text(),
