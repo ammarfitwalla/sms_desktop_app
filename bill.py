@@ -8,7 +8,7 @@ from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
     QMenuBar, QCheckBox, QSizePolicy
-
+import configparser
 from utils import split_string, get_date_month_year, convert_date_string
 import master_entry
 from database import *
@@ -293,13 +293,20 @@ class BillEntry(BaseWindow):
 
         self.bill_entry_table = QTableWidget(self)
 
-        self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
-                                   "Rent\nFrom", "Rent\nTo", "@", "Total\nMonths", "Total\nAmount",
-                                   "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
-                                   "Mobile", "DoD", "Agreement\nDate", "Notes", "Gender"]
+        self.bill_table_columns = ["Received Date", "House No.", "Room No.", "CTS No.", "Name",
+                                   "Rent From", "Rent To", "@", "Total Months", "Total Amount",
+                                   "Book No.", "Bill No.", "Extra Payment", "Purpose For",
+                                   "Mobile", "DoD", "Agreement Date", "Notes", "Gender"]
+        #
+        # self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
+        #                            "Rent\nFrom", "Rent\nTo", "@", "Total\nMonths", "Total\nAmount",
+        #                            "Book\nNo.", "Bill\nNo.", "Extra\nPayment", "Purpose\nFor",
+        #                            "Mobile", "DoD", "Agreement\nDate", "Notes", "Gender"]
+
+        self.bill_table_columns_to_display = [i.replace(" ", "\n") if " " in i else i for i in self.bill_table_columns]
 
         self.bill_entry_table.setColumnCount(len(self.bill_table_columns))
-        self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns)
+        self.bill_entry_table.setHorizontalHeaderLabels(self.bill_table_columns_to_display)
         layout.addWidget(self.bill_entry_table, 9, 0, 1, 6)
 
         self.bill_entry_table.setSortingEnabled(True)
@@ -314,13 +321,52 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.verticalHeader().setStyleSheet(
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
 
-        name_column_index = self.bill_table_columns.index("Name")
-        name_column_width = 100
-        self.bill_entry_table.setColumnWidth(name_column_index, name_column_width)
+        # name_column_index = self.bill_table_columns.index("Name")
+        # name_column_width = 100
+        # self.bill_entry_table.setColumnWidth(name_column_index, name_column_width)
+
         self.bill_entry_table.itemClicked.connect(self.print_record)
 
+        self.config = configparser.ConfigParser()
+        self.config_file = 'bill_entry_config.ini'
+        self.load_config()
+        self.adjust_columns()
+        self.bill_entry_table.horizontalHeader().sectionResized.connect(self.column_resized)
         self.populate_table()
         self.update_total_months()
+
+    def load_config(self):
+        # Load existing configuration file if it exists
+        if os.path.exists(self.config_file):
+            self.config.read(self.config_file)
+        else:
+            self.config['ColumnWidths'] = {}
+            self.save_config()
+
+    def adjust_columns(self):
+        # Adjust columns based on stored column widths
+        for logical_index, column_name in enumerate(self.bill_table_columns):
+            if 'ColumnWidths' in self.config and column_name in self.config['ColumnWidths']:
+                column_width = int(self.config['ColumnWidths'][column_name])
+                self.bill_entry_table.setColumnWidth(logical_index, column_width)
+
+    def column_resized(self, logical_index, new_size):
+        # User has resized a column, save the new size
+        try:
+            column_name = self.bill_table_columns[logical_index]
+            self.config.set('ColumnWidths', column_name, str(new_size))
+            self.save_config()
+        except Exception as e:
+            print("error", str(e))
+
+    def save_config(self):
+        # Save current column widths to configuration
+        for logical_index, column_name in enumerate(self.bill_table_columns):
+            column_width = self.bill_entry_table.columnWidth(logical_index)
+            self.config.set('ColumnWidths', column_name, str(column_width))
+
+        with open(self.config_file, 'w') as configfile:
+            self.config.write(configfile)
 
     def toggle_agreement_date_input(self, state):
         if state == Qt.Checked:
@@ -378,16 +424,16 @@ class BillEntry(BaseWindow):
                 # Add 'Edit' and 'Delete' buttons
                 # self.add_table_buttons(row_number)
 
-            # columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
-            columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 18]  # Adjust indices as needed
-
-            for col in columns_to_adjust:
-                self.bill_entry_table.resizeColumnToContents(col)
-
-            self.bill_entry_table.setColumnWidth(4, 250)
-            self.bill_entry_table.setColumnWidth(2, 80)
-            self.bill_entry_table.setColumnWidth(13, 80)
-            self.bill_entry_table.setColumnWidth(17, 100)
+            # # columns_to_adjust = [i for i in range(len(column_names))]  # Adjust indices as needed
+            # columns_to_adjust = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 18]  # Adjust indices as needed
+            #
+            # for col in columns_to_adjust:
+            #     self.bill_entry_table.resizeColumnToContents(col)
+            #
+            # self.bill_entry_table.setColumnWidth(4, 250)
+            # self.bill_entry_table.setColumnWidth(2, 80)
+            # self.bill_entry_table.setColumnWidth(13, 80)
+            # self.bill_entry_table.setColumnWidth(17, 100)
 
     def add_table_buttons(self, row):
         btn_edit = QPushButton(self)

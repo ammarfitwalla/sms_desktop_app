@@ -1,6 +1,6 @@
 import os
 import sys
-
+import configparser
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QMenuBar, QMenu, QAction,
                              QFormLayout, QLabel, QLineEdit, QDateEdit, QCheckBox,
                              QPushButton, QRadioButton, QGridLayout, QHBoxLayout,
@@ -155,7 +155,8 @@ class MasterEntry(BaseWindow):
         self.master_entry_table = QTableWidget(self)
         self.master_entry_table_columns = ["House No.", "Room No.", "CTS No.", "Name",
                                            "Mobile", "DoD", "Notes", "Gender"]
-        self.master_entry_table.setColumnCount(len(self.master_entry_table_columns))  # Number of columns based on the fields you have
+        self.master_entry_table.setColumnCount(
+            len(self.master_entry_table_columns))  # Number of columns based on the fields you have
         self.master_entry_table.setHorizontalHeaderLabels(self.master_entry_table_columns)
         layout.addRow(self.master_entry_table)
         self.master_entry_table.setSortingEnabled(True)
@@ -171,9 +172,48 @@ class MasterEntry(BaseWindow):
         self.master_entry_table.verticalHeader().setStyleSheet(
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
 
+        self.config = configparser.ConfigParser()
+        self.config_file = 'master_entry_config.ini'
+        self.load_config()
+        self.adjust_columns()
+        self.master_entry_table.horizontalHeader().sectionResized.connect(self.column_resized)
         self.populate_table()
+
         self.setLayout(layout)
         main_layout.addLayout(layout)
+
+    def load_config(self):
+        # Load existing configuration file if it exists
+        if os.path.exists(self.config_file):
+            self.config.read(self.config_file)
+        else:
+            self.config['ColumnWidths'] = {}
+            self.save_config()
+
+    def adjust_columns(self):
+        # Adjust columns based on stored column widths
+        for logical_index, column_name in enumerate(self.master_entry_table_columns):
+            if 'ColumnWidths' in self.config and column_name in self.config['ColumnWidths']:
+                column_width = int(self.config['ColumnWidths'][column_name])
+                self.master_entry_table.setColumnWidth(logical_index, column_width)
+
+    def column_resized(self, logical_index, new_size):
+        # User has resized a column, save the new size
+        try:
+            column_name = self.master_entry_table_columns[logical_index]
+            self.config.set('ColumnWidths', column_name, str(new_size))
+            self.save_config()
+        except Exception as e:
+            print("error", str(e))
+
+    def save_config(self):
+        # Save current column widths to configuration
+        for logical_index, column_name in enumerate(self.master_entry_table_columns):
+            column_width = self.master_entry_table.columnWidth(logical_index)
+            self.config.set('ColumnWidths', column_name, str(column_width))
+
+        with open(self.config_file, 'w') as configfile:
+            self.config.write(configfile)
 
     def setup_combobox(self, data_function):
         combo = QComboBox(self)
@@ -307,14 +347,16 @@ class MasterEntry(BaseWindow):
             # delete_btn.setFixedWidth(50)
             # self.master_entry_table.setColumnWidth(9, 50)
 
-        columns_to_adjust = [0, 1, 2, 4, 5, 6, 7]  # Adjust indices as needed
+        # columns_to_adjust = [0, 1, 2, 4, 5, 6, 7]  # Adjust indices as needed
+        #
+        # for col in columns_to_adjust:
+        #     self.master_entry_table.resizeColumnToContents(col)
+        #
+        # self.master_entry_table.setColumnWidth(3, 300)
+        # self.master_entry_table.setColumnWidth(6, 300)
+        # self.master_entry_table.setColumnWidth(1, 80)
 
-        for col in columns_to_adjust:
-            self.master_entry_table.resizeColumnToContents(col)
-
-        self.master_entry_table.setColumnWidth(3, 300)
-        self.master_entry_table.setColumnWidth(6, 300)
-        self.master_entry_table.setColumnWidth(1, 80)
+        # self.adjust_columns()
 
     def validate_input(self):
         mandatory_fields = [(self.house_number_combo.currentText(), "House Number"),
