@@ -8,11 +8,12 @@ from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
     QMenuBar, QCheckBox, QSizePolicy
-import configparser
 from utils import split_string, get_date_month_year, convert_date_string, check_dir
 import master_entry
-from database import *
+import database
+# from database import *
 from base_class import BaseWindow
+import configparser
 
 
 class BillEntry(BaseWindow):
@@ -388,7 +389,7 @@ class BillEntry(BaseWindow):
         self.populate_table(search_term)
 
     def populate_table(self, search_term=''):
-        bill_entries = get_all_bill_entries()
+        bill_entries = database.get_all_bill_entries()
 
         # Filter the entries based on the search term
         if search_term:
@@ -590,7 +591,7 @@ class BillEntry(BaseWindow):
         # If additional data was fetched from the database
         if 'BILL_ID' in data and data['BILL_ID']:
             self.bill_id = data['BILL_ID']
-            bill_for_month_of, notes = fetch_data_for_edit_record(data['BILL_ID'])
+            bill_for_month_of, notes = database.fetch_data_for_edit_record(data['BILL_ID'])
             if bill_for_month_of:
                 self.bill_for_month_of.setDate(QDate.fromString(bill_for_month_of, 'MMM-yyyy'))
             if notes:
@@ -642,7 +643,7 @@ class BillEntry(BaseWindow):
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            success, message = delete_bill_by_id(self.bill_id)
+            success, message = database.delete_bill_by_id(self.bill_id)
             if success:
                 # time.sleep(1)
                 self.populate_table()
@@ -695,7 +696,7 @@ class BillEntry(BaseWindow):
 
     def calculate_next_numbers(self):
         # Get the latest numbers from the database
-        latest_book_number, latest_bill_number = get_latest_book_and_bill_numbers()
+        latest_book_number, latest_bill_number = database.get_latest_book_and_bill_numbers()
 
         # Logic to determine the next book and bill number
         if latest_bill_number == 100:
@@ -746,28 +747,28 @@ class BillEntry(BaseWindow):
             self.total_rupees_line.setText(str(0))
 
     def populate_houses_dropdown(self):
-        houses = get_house_data()
+        houses = database.get_house_data()
         for house in houses:
             house_number, house_id = house[0], house[1]
             self.house_number_combo.addItem(house_number, house_id)
 
     def house_changed(self):
         current_house_id = self.house_number_combo.currentData()
-        rooms = get_rooms_data_by_house_id(current_house_id)
+        rooms = database.get_rooms_data_by_house_id(current_house_id)
         self.tenant_name_combo.clear()
         for room in rooms:
             room_id = room[1]
-            tenant_name, tenant_id = get_tenants_data_by_room_id(room_id)
+            tenant_name, tenant_id = database.get_tenants_data_by_room_id(room_id)
             self.tenant_name_combo.addItem(tenant_name, tenant_id)
 
     def tenant_changed(self):
         current_tenant_id = self.tenant_name_combo.currentData()
         self.room_number_combo.clear()
         if current_tenant_id:
-            room_name, room_id = get_room_data_by_tenant_id(current_tenant_id)
+            room_name, room_id = database.get_room_data_by_tenant_id(current_tenant_id)
             self.room_number_combo.addItem(room_name, room_id)
             if self.operation == 'insert':
-                last_bill_data = get_last_bill_data_by_tenant_id(current_tenant_id)
+                last_bill_data = database.get_last_bill_data_by_tenant_id(current_tenant_id)
                 if last_bill_data:
                     # TODO: MATCH THE NAMES BETWEEN DB AND INIT_UI. MAKE THE NAMES COMMON. FIX BELOW CODE ONCE DONE
                     set_data = {'RECEIVED_DATE': last_bill_data['received_date'].strftime('%Y-%m-%d'),
@@ -807,7 +808,7 @@ class BillEntry(BaseWindow):
     def room_changed(self):
         current_room_id = self.room_number_combo.currentData()
         if current_room_id:
-            cts_number = get_cts_number_by_room_id(current_room_id)
+            cts_number = database.get_cts_number_by_room_id(current_room_id)
             self.cts_number_line.setText(cts_number)
             self.cts_number_line.setReadOnly(True)
         else:
@@ -873,7 +874,7 @@ class BillEntry(BaseWindow):
                                          "Are you sure you want to Add this bill?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
-                status, message = insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for, rent_from,
+                status, message = database.insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for, rent_from,
                                                     rent_to,
                                                     at_the_rate_of, total_months, total_rupees, received_date,
                                                     extra_payment, agreement_date, notes, current_tenant_id)
@@ -884,7 +885,7 @@ class BillEntry(BaseWindow):
                     QMessageBox.warning(self, "Error", str(message))
 
         else:
-            status, message = update_bill_entry(self.bill_id, bill_for_month_of, book_number, bill_number, purpose_for,
+            status, message = database.update_bill_entry(self.bill_id, bill_for_month_of, book_number, bill_number, purpose_for,
                                                 rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
                                                 received_date, extra_payment, agreement_date, notes)
             if status:
@@ -915,7 +916,7 @@ class BillEntry(BaseWindow):
         cts_number = self.cts_number_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
         if self.operation == "insert":
-            previous_rent_from_date, previous_rent_to_date = get_last_from_and_to_dates(house_number, room_number,
+            previous_rent_from_date, previous_rent_to_date = database.get_last_from_and_to_dates(house_number, room_number,
                                                                                         cts_number, self.operation)
 
             if previous_rent_from_date and previous_rent_to_date:
@@ -933,7 +934,7 @@ class BillEntry(BaseWindow):
         return True
 
     def print_data(self):
-        tenant_name = get_tenant_name_by_bill_id(self.bill_id)
+        tenant_name = database.get_tenant_name_by_bill_id(self.bill_id)
         tenant_name_first_set, tenant_name_second_set = split_string(tenant_name, 45)
         received_date_with_ordinal, received_month, received_year = get_date_month_year(
             self.received_date.date().toString("yyyy-MM-dd"))
