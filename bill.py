@@ -11,7 +11,6 @@ from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdi
 from utils import split_string, get_date_month_year, convert_date_string, check_dir
 import master_entry
 import database
-# from database import *
 from base_class import BaseWindow
 import configparser
 
