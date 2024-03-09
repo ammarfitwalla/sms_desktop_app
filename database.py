@@ -8,19 +8,15 @@ base_folder = 'sms_data'
 config_file = os.path.join(base_folder, 'config.ini')
 config.read(config_file)
 
-# Create a connection pool
-connection_pool = mysql.connector.pooling.MySQLConnectionPool(
-    pool_name='my_pool',
-    pool_size=5,
-    host=config['DatabaseCredentials']['host'],
-    user=config['DatabaseCredentials']['user'],
-    password=config['DatabaseCredentials']['password'],
-    database=config['DatabaseCredentials']['database'])
 
-
-# Function to get a connection from the pool
 def create_connection():
-    return connection_pool.get_connection()
+    connection = mysql.connector.connect(
+        host=config['DatabaseCredentials']['host'],
+        user=config['DatabaseCredentials']['user'],
+        password=config['DatabaseCredentials']['password'],
+        database=config['DatabaseCredentials']['database'])
+
+    return connection
 
 
 def check_credentials(username, password):
