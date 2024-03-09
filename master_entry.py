@@ -1,17 +1,16 @@
 import os
 import sys
 import configparser
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QMenuBar, QMenu, QAction,
+from PyQt5.QtWidgets import (QVBoxLayout, QMenuBar, QAction,
                              QFormLayout, QLabel, QLineEdit, QDateEdit, QCheckBox,
                              QPushButton, QRadioButton, QGridLayout, QHBoxLayout,
-                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem, QToolBar, QApplication)
+                             QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem, QApplication)
 import database
 from datetime import date
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QDate, QSize
+from PyQt5.QtCore import Qt, QDate
 from base_class import BaseWindow
+from utils import check_dir
 import bill
-from PyQt5.QtGui import QPixmap
 
 
 class MasterEntry(BaseWindow):
@@ -56,8 +55,8 @@ class MasterEntry(BaseWindow):
 
         # Create a File menu
         file_menu = menubar.addMenu('File')
-        about_menu = menubar.addMenu('About')
-        help_menu = menubar.addMenu('Help')
+        menubar.addMenu('About')
+        menubar.addMenu('Help')
 
         # Add 'Switch to Master' action under File menu
         switch_to_master_action = QAction('Bill Entry', self)
@@ -173,7 +172,9 @@ class MasterEntry(BaseWindow):
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
 
         self.config = configparser.ConfigParser()
-        self.config_file = 'master_entry_config.ini'
+        self.base_folder = 'sms_data'
+        check_dir(self.base_folder)
+        self.config_file = os.path.join(self.base_folder, 'config.ini')
         self.load_config()
         self.adjust_columns()
         self.master_entry_table.horizontalHeader().sectionResized.connect(self.column_resized)
@@ -186,22 +187,27 @@ class MasterEntry(BaseWindow):
         # Load existing configuration file if it exists
         if os.path.exists(self.config_file):
             self.config.read(self.config_file)
+            if 'MasterColumnWidths' not in self.config.sections():
+                self.create_config_section('MasterColumnWidths')
         else:
-            self.config['ColumnWidths'] = {}
-            self.save_config()
+            self.create_config_section('MasterColumnWidths')
+
+    def create_config_section(self, section_name):
+        self.config[section_name] = {}
+        self.save_config()
 
     def adjust_columns(self):
         # Adjust columns based on stored column widths
         for logical_index, column_name in enumerate(self.master_entry_table_columns):
-            if 'ColumnWidths' in self.config and column_name in self.config['ColumnWidths']:
-                column_width = int(self.config['ColumnWidths'][column_name])
+            if 'MasterColumnWidths' in self.config and column_name in self.config['MasterColumnWidths']:
+                column_width = int(self.config['MasterColumnWidths'][column_name])
                 self.master_entry_table.setColumnWidth(logical_index, column_width)
 
     def column_resized(self, logical_index, new_size):
         # User has resized a column, save the new size
         try:
             column_name = self.master_entry_table_columns[logical_index]
-            self.config.set('ColumnWidths', column_name, str(new_size))
+            self.config.set('MasterColumnWidths', column_name, str(new_size))
             self.save_config()
         except Exception as e:
             print("error", str(e))
@@ -210,7 +216,7 @@ class MasterEntry(BaseWindow):
         # Save current column widths to configuration
         for logical_index, column_name in enumerate(self.master_entry_table_columns):
             column_width = self.master_entry_table.columnWidth(logical_index)
-            self.config.set('ColumnWidths', column_name, str(column_width))
+            self.config.set('MasterColumnWidths', column_name, str(column_width))
 
         with open(self.config_file, 'w') as configfile:
             self.config.write(configfile)

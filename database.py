@@ -1,13 +1,26 @@
+import os
+import configparser
 import mysql.connector
 
+config = configparser.ConfigParser()
 
+base_folder = 'sms_data'
+config_file = os.path.join(base_folder, 'config.ini')
+config.read(config_file)
+
+# Create a connection pool
+connection_pool = mysql.connector.pooling.MySQLConnectionPool(
+    pool_name='my_pool',
+    pool_size=5,
+    host=config['DatabaseCredentials']['host'],
+    user=config['DatabaseCredentials']['user'],
+    password=config['DatabaseCredentials']['password'],
+    database=config['DatabaseCredentials']['database'])
+
+
+# Function to get a connection from the pool
 def create_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="admin",
-        database="societydb"
-    )
+    return connection_pool.get_connection()
 
 
 def check_credentials(username, password):

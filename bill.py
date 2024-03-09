@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdi
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
     QMenuBar, QCheckBox, QSizePolicy
 import configparser
-from utils import split_string, get_date_month_year, convert_date_string
+from utils import split_string, get_date_month_year, convert_date_string, check_dir
 import master_entry
 from database import *
 from base_class import BaseWindow
@@ -328,7 +328,9 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.itemClicked.connect(self.print_record)
 
         self.config = configparser.ConfigParser()
-        self.config_file = 'bill_entry_config.ini'
+        self.base_folder = 'sms_data'
+        check_dir(self.base_folder)
+        self.config_file = os.path.join(self.base_folder, 'config.ini')
         self.load_config()
         self.adjust_columns()
         self.bill_entry_table.horizontalHeader().sectionResized.connect(self.column_resized)
@@ -339,22 +341,27 @@ class BillEntry(BaseWindow):
         # Load existing configuration file if it exists
         if os.path.exists(self.config_file):
             self.config.read(self.config_file)
+            if 'BillColumnWidths' not in self.config.sections():
+                self.create_config_section('BillColumnWidths')
         else:
-            self.config['ColumnWidths'] = {}
-            self.save_config()
+            self.create_config_section('BillColumnWidths')
+
+    def create_config_section(self, section_name):
+        self.config[section_name] = {}
+        self.save_config()
 
     def adjust_columns(self):
         # Adjust columns based on stored column widths
         for logical_index, column_name in enumerate(self.bill_table_columns):
-            if 'ColumnWidths' in self.config and column_name in self.config['ColumnWidths']:
-                column_width = int(self.config['ColumnWidths'][column_name])
+            if 'BillColumnWidths' in self.config and column_name in self.config['BillColumnWidths']:
+                column_width = int(self.config['BillColumnWidths'][column_name])
                 self.bill_entry_table.setColumnWidth(logical_index, column_width)
 
     def column_resized(self, logical_index, new_size):
         # User has resized a column, save the new size
         try:
             column_name = self.bill_table_columns[logical_index]
-            self.config.set('ColumnWidths', column_name, str(new_size))
+            self.config.set('BillColumnWidths', column_name, str(new_size))
             self.save_config()
         except Exception as e:
             print("error", str(e))
@@ -363,7 +370,7 @@ class BillEntry(BaseWindow):
         # Save current column widths to configuration
         for logical_index, column_name in enumerate(self.bill_table_columns):
             column_width = self.bill_entry_table.columnWidth(logical_index)
-            self.config.set('ColumnWidths', column_name, str(column_width))
+            self.config.set('BillColumnWidths', column_name, str(column_width))
 
         with open(self.config_file, 'w') as configfile:
             self.config.write(configfile)

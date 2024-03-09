@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 
@@ -31,3 +32,8 @@ def split_string(name, max_length):
             return name[:last_space_index], name[last_space_index + 1:]
         else:
             return name[:max_length], name[max_length:]
+
+
+def check_dir(path):
+    if not os.path.isdir(path):
+        os.mkdir(path)
