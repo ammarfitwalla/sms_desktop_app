@@ -155,13 +155,14 @@ class BillEntry(BaseWindow):
         self.rent_to_date = QDateEdit()
         self.rent_to_date.setDisplayFormat('MMM-yyyy')
         self.rent_to_date.setDate(QDate.currentDate())
-        self.rent_to_date.setReadOnly(True)
+        # self.rent_to_date.setReadOnly(True)
         layout.addWidget(self.rent_from_label, 3, 2)
         layout.addWidget(self.rent_from_date, 3, 3)
         layout.addWidget(self.rent_to_label, 3, 4)
         layout.addWidget(self.rent_to_date, 3, 5)
 
         self.bill_for_month_of.dateChanged.connect(self.update_rent_to_date)
+        self.rent_to_date.dateChanged.connect(self.update_bill_for_month_of_date)
         self.rent_from_date.dateChanged.connect(self.update_total_months)
         self.rent_to_date.dateChanged.connect(self.update_total_months)
 
@@ -658,7 +659,7 @@ class BillEntry(BaseWindow):
         self.print_button.setDisabled(True)
         self.edit_button.setDisabled(True)
         self.delete_button.setDisabled(True)
-        self.rent_to_date.setReadOnly(True)
+        # self.rent_to_date.setReadOnly(True)
         self.house_number_combo.setCurrentIndex(0)
         self.tenant_name_combo.setCurrentIndex(0)
         self.room_number_combo.setCurrentIndex(0)
@@ -712,6 +713,10 @@ class BillEntry(BaseWindow):
     def update_rent_to_date(self):
         bill_for_month_of = self.bill_for_month_of.date()
         self.rent_to_date.setDate(bill_for_month_of)
+
+    def update_bill_for_month_of_date(self):
+        rent_to_date = self.rent_to_date.date()
+        self.bill_for_month_of.setDate(rent_to_date)
 
     def update_total_months(self):
         rent_from_date = self.rent_from_date.date()
@@ -873,10 +878,11 @@ class BillEntry(BaseWindow):
                                          "Are you sure you want to Add this bill?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
-                status, message = database.insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for, rent_from,
-                                                    rent_to,
-                                                    at_the_rate_of, total_months, total_rupees, received_date,
-                                                    extra_payment, agreement_date, notes, current_tenant_id)
+                status, message = database.insert_bill_entry(bill_for_month_of, book_number, bill_number, purpose_for,
+                                                             rent_from,
+                                                             rent_to,
+                                                             at_the_rate_of, total_months, total_rupees, received_date,
+                                                             extra_payment, agreement_date, notes, current_tenant_id)
                 if status:
                     QMessageBox.information(self, "Success", "Bill Data Inserted successfully!")
                     self.clear_form()
@@ -884,9 +890,10 @@ class BillEntry(BaseWindow):
                     QMessageBox.warning(self, "Error", str(message))
 
         else:
-            status, message = database.update_bill_entry(self.bill_id, bill_for_month_of, book_number, bill_number, purpose_for,
-                                                rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
-                                                received_date, extra_payment, agreement_date, notes)
+            status, message = database.update_bill_entry(self.bill_id, bill_for_month_of, book_number, bill_number,
+                                                         purpose_for,
+                                                         rent_from, rent_to, at_the_rate_of, total_months, total_rupees,
+                                                         received_date, extra_payment, agreement_date, notes)
             if status:
                 QMessageBox.information(self, "Success", "Bill Data Updated successfully!")
                 # self.clear_form()
@@ -915,8 +922,10 @@ class BillEntry(BaseWindow):
         cts_number = self.cts_number_line.text()
         rent_from = self.rent_from_date.date().toString("MMM-yyyy")
         if self.operation == "insert":
-            previous_rent_from_date, previous_rent_to_date = database.get_last_from_and_to_dates(house_number, room_number,
-                                                                                        cts_number, self.operation)
+            previous_rent_from_date, previous_rent_to_date = database.get_last_from_and_to_dates(house_number,
+                                                                                                 room_number,
+                                                                                                 cts_number,
+                                                                                                 self.operation)
 
             if previous_rent_from_date and previous_rent_to_date:
                 previous_rent_to = datetime.strptime(previous_rent_to_date, "%b-%Y")
