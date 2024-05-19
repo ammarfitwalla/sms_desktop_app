@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPainter, QImage, QFont, QIcon, QIntValidator
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
-    QMenuBar, QCheckBox, QSizePolicy
+    QMenuBar, QCheckBox, QSizePolicy, QCalendarWidget
 from utils import split_string, get_date_month_year, convert_date_string, check_dir
 import master_entry
 import database
@@ -192,6 +192,7 @@ class BillEntry(BaseWindow):
         # Row 5
         self.received_date_label = QLabel('Received Date')
         self.received_date = QDateEdit()
+        self.received_date.setCalendarPopup(True)
         self.received_date.setDate(QDate.currentDate())
         layout.addWidget(self.received_date_label, 5, 0)
         layout.addWidget(self.received_date, 5, 1)
@@ -205,6 +206,7 @@ class BillEntry(BaseWindow):
 
         self.agreement_date_label = QLabel('Agreement Date')
         self.agreement_date = QDateEdit()
+        self.agreement_date.setCalendarPopup(True)
         # self.agreement_date.setDate(QDate.currentDate())
         self.is_alive_checkbox = QCheckBox("Date N/A", self)
 
