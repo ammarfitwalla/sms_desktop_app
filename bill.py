@@ -609,8 +609,6 @@ class BillEntry(BaseWindow):
 
     def set_data_to_form(self, data):
         # Fill the form fields with the data
-        print('data in set data to form', self.operation)
-        print(data)
         # Check if the key is present before accessing it
         if 'RECEIVED_DATE' in data:
             self.received_date.setDate(QDate.fromString(data['RECEIVED_DATE'], 'yyyy-MM-dd'))
@@ -857,15 +855,12 @@ class BillEntry(BaseWindow):
         if self.operation == 'print':
             return
         current_house_id = self.house_number_combo.currentData()
-        print("current_house_id", current_house_id)
         rooms = database.get_rooms_data_by_house_id(current_house_id)
         self.tenant_name_combo.clear()
         for room in rooms:
             room_id = room[1]
-            print("room_id", room_id)
             tenant_name, tenant_id = database.get_tenants_data_by_room_id(room_id)
             if tenant_name and tenant_id:
-                print("tenant_name, tenant_id", tenant_name, tenant_id)
                 self.tenant_name_combo.addItem(tenant_name, tenant_id)
 
     def tenant_changed(self):
