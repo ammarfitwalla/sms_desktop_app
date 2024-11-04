@@ -426,6 +426,75 @@ def update_master_entry(old_house_number, old_cts_number, old_room_number, house
         connection.close()
 
 
+def get_tenant_id_by_house_cts_room_number(house_number, cts_number, room_number):
+    connection = create_connection()
+    cursor = connection.cursor()
+    current_tenant = 'True'
+
+    try:
+        house_id = get_house_id_by_house_number(cursor, house_number)
+        cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
+        room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
+        tenant_id = get_tenant_id_by_room_id(cursor, room_id, current_tenant)
+        if tenant_id:
+            return tenant_id
+    except mysql.connector.Error:
+        return
+
+
+def update_new_tenant_to_old_room(house_number, cts_number, room_number, tenant_name,
+                                  tenant_mobile, tenant_dod, notes, tenant_gender):
+    connection = create_connection()
+    cursor = connection.cursor()
+    try:
+        current_tenant = 'True'
+        house_id = get_house_id_by_house_number(cursor, house_number)
+        cts_id = get_cts_id_by_cts_number_house_id(cursor, cts_number, house_id)
+        room_id = get_room_id_by_room_number_cts_id_house_id(cursor, room_number, cts_id, house_id)
+        insert_tenant(cursor, tenant_name, tenant_mobile, tenant_dod, tenant_gender, notes, current_tenant, room_id)
+        connection.commit()
+        return True, "Successfully inserted new Tenant to old room"
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        connection.rollback()
+        return False, f"Unable to insert data due to {err}"
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def update_current_tenant_status(tenant_id, status):
+    connection = create_connection()
+    cursor = connection.cursor()
+    try:
+        query = "UPDATE tenants SET current_tenant = %s WHERE tenant_id = %s"
+        cursor.execute(query, (status, tenant_id))
+        connection.commit()
+        return True, "Successfully updated the data!"
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        connection.rollback()
+        return False, f"Unable to update data due to {err}"
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# def insert_new_tenant_with_old_room(room_id):
+#     connection = create_connection()
+#     cursor = connection.cursor()
+#
+#     # Insert new tenant details for the existing room
+#     query = "INSERT INTO tenants (room_id, current_tenant) VALUES (%s, %s)"
+#     cursor.execute(query, (room_id, True))
+#     new_tenant_id = cursor.lastrowid  # Capture the new tenant ID
+#
+#     connection.commit()
+#     connection.close()
+#
+#     return new_tenant_id
+
+
 def delete_master_entry(old_house_number, old_cts_number, old_room_number):
     connection = create_connection()
     cursor = connection.cursor()
@@ -465,7 +534,17 @@ def get_house_data():
     connection = create_connection()
     cursor = connection.cursor()
 
-    query = "SELECT DISTINCT house_number, house_id FROM Houses"
+    query = """
+        SELECT
+        h.house_number,
+        h.house_id
+        FROM Tenants t
+        JOIN Rooms r ON t.room_id = r.room_id
+        JOIN CTS c ON r.cts_id = c.cts_id
+        JOIN Houses h ON c.house_id = h.house_id
+        WHERE t.current_tenant = 'True'
+        ORDER BY h.house_number ASC;
+    """
     cursor.execute(query)
     results = cursor.fetchall()
 
@@ -818,13 +897,15 @@ def get_tenants_data_by_room_id(room_id):
     connection = create_connection()
     cursor = connection.cursor()
 
-    query = "SELECT DISTINCT tenant_name, tenant_id FROM Tenants WHERE room_id=%s AND current_tenant=%s"
     current_tenant = 'True'
+    query = "SELECT DISTINCT tenant_name, tenant_id FROM Tenants WHERE room_id=%s AND current_tenant=%s"
     cursor.execute(query, (room_id, current_tenant))
     results = cursor.fetchone()
-
     connection.close()
-    return results[0], results[1]
+
+    if results:
+        return results[0], results[1]
+    return None, None
 
 
 def get_room_data_by_tenant_id(tenant_id):

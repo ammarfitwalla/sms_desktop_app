@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPainter, QImage, QFont, QIcon, QIntValidator
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
-    QMenuBar, QCheckBox, QSizePolicy, QCalendarWidget
+    QMenuBar, QCheckBox, QSizePolicy, QCalendarWidget, QToolButton, QWidget
 from utils import split_string, get_date_month_year, convert_date_string, check_dir
 import master_entry
 import database
@@ -15,9 +15,37 @@ from base_class import BaseWindow
 import configparser
 
 
+# class CustomDateEditWithButton(QWidget):
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#
+#         # Main layout for the widget
+#         layout = QHBoxLayout(self)
+#
+#         # Create the QDateEdit
+#         self.date_edit = QDateEdit()
+#         self.date_edit.setCalendarPopup(True)
+#         self.date_edit.setDate(QDate.currentDate())
+#
+#         # Create a QToolButton that looks like a link or small button
+#         self.today_button = QToolButton()
+#         self.today_button.setText("Today’s Date")
+#         self.today_button.setStyleSheet("QToolButton {color: blue; font-size: 14px;}")
+#         self.today_button.setCursor(Qt.PointingHandCursor)
+#         self.today_button.clicked.connect(self.set_today_date)
+#
+#         # Add widgets to layout
+#         # layout.addWidget(QLabel("Received Date"))
+#         layout.addWidget(self.date_edit)
+#         layout.addWidget(self.today_button)
+#
+#     def set_today_date(self):
+#         self.date_edit.setDate(QDate.currentDate())
+
 class BillEntry(BaseWindow):
     def __init__(self):
         super().__init__()
+        self.operation = "insert"
         self.init_ui()
         self.set_default_state()
         self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
@@ -26,7 +54,6 @@ class BillEntry(BaseWindow):
     def set_default_state(self):
         self.bill_id = None
         self.current_row = None
-        self.operation = "insert"
         self.setWindowTitle("Bill Entry - Add")
 
     def switch_to_master(self):
@@ -76,11 +103,10 @@ class BillEntry(BaseWindow):
 
         main_layout.setMenuBar(menubar)
 
-        # Create a grid layout for the rest of the UI components
+        # ------------------------------------- Create grid layout ------------------------------------- #
         layout = QGridLayout()
-        main_layout.addLayout(layout)  # Add the grid layout to the main layout
+        main_layout.addLayout(layout)
 
-        # Row 2
         self.bill_for_month_of_label = QLabel('Bill For Month Of')
         self.bill_for_month_of = QDateEdit()
         # self.bill_for_month_of.setCalendarPopup(True)  # Enable calendar popup
@@ -89,7 +115,6 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.bill_for_month_of_label, 0, 0)
         layout.addWidget(self.bill_for_month_of, 0, 1)  # Spanning across two columns for space
 
-        # Row 3
         self.book_number_label = QLabel('Book Number')
         self.book_number_line = QLineEdit()
         self.book_number_line.setValidator(QIntValidator())
@@ -190,12 +215,49 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.total_rupees_line, 4, 5)
 
         # Row 5
+        # self.received_date_label = QLabel('Received Date')
+        # self.received_date = QDateEdit()
+        # self.received_date.setCalendarPopup(True)
+        # self.received_date.setDate(QDate.currentDate())
+        # layout.addWidget(self.received_date_label, 5, 0)
+        # layout.addWidget(self.received_date, 5, 1)
+        #
+        # self.today_button = QToolButton()
+        # self.today_button.setText("Today’s Date")
+        # self.today_button.setStyleSheet("QToolButton {color: blue; font-size: 14px;}")
+        # self.today_button.setCursor(Qt.PointingHandCursor)
+        # self.today_button.clicked.connect(self.set_today_date)
+        # layout.addWidget(self.today_button, 5, 2)
+
+        # Label for received date
         self.received_date_label = QLabel('Received Date')
+        layout.addWidget(self.received_date_label, 5, 0)
+
+        # Create a horizontal layout to hold the date edit and button together
+        date_layout = QHBoxLayout()
+
+        # Date edit field
         self.received_date = QDateEdit()
         self.received_date.setCalendarPopup(True)
         self.received_date.setDate(QDate.currentDate())
-        layout.addWidget(self.received_date_label, 5, 0)
-        layout.addWidget(self.received_date, 5, 1)
+        date_layout.addWidget(self.received_date)
+
+        # Today’s Date button
+        self.today_button = QToolButton()
+        self.today_button.setText("Today’s Date")
+        self.today_button.setStyleSheet("QToolButton {color: blue; font-size: 14px;}")
+        self.today_button.setCursor(Qt.PointingHandCursor)
+        self.today_button.clicked.connect(self.set_today_date_in_received_date)
+        date_layout.addWidget(self.today_button)
+
+        # Add the horizontal layout to the main layout at row 5, column 1
+        layout.addLayout(date_layout, 5, 1)
+
+        # self.received_date_label = QLabel('Received Date')
+        # self.custom_date_edit = CustomDateEditWithButton()
+        # layout.addWidget(self.custom_date_edit)
+        # layout.addWidget(self.received_date_label, 5, 0)
+        # layout.addWidget(self.custom_date_edit, 5, 1)
 
         self.extra_payment_label = QLabel('Extra Payment')
         self.extra_payment_line = QLineEdit()
@@ -207,27 +269,34 @@ class BillEntry(BaseWindow):
         self.agreement_date_label = QLabel('Agreement Date')
         self.agreement_date = QDateEdit()
         self.agreement_date.setCalendarPopup(True)
-        # self.agreement_date.setDate(QDate.currentDate())
-        self.is_alive_checkbox = QCheckBox("Date N/A", self)
+        self.agreement_date.setDate(QDate.currentDate())
+        layout.addWidget(self.agreement_date_label, 5, 4)
 
+        # Checkbox to indicate date is not available
+        self.is_alive_checkbox = QCheckBox("Date N/A", self)
         self.agreement_date.setDisabled(True)
         self.is_alive_checkbox.setChecked(True)
         self.is_alive_checkbox.stateChanged.connect(self.toggle_agreement_date_input)
 
+        # Layout for Agreement Date and Checkbox
         hlayout = QHBoxLayout()
-        hlayout.addWidget(self.agreement_date_label)
         hlayout.addWidget(self.agreement_date)
         hlayout.addWidget(self.is_alive_checkbox)
-        # Add some spacing between the widgets
         hlayout.setSpacing(10)
         layout.addLayout(hlayout, 5, 5)
 
-        # Set the alignment and size policy of the agreement date label
-        self.agreement_date_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.agreement_date_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        # Agreement Date "Today’s Date" Button
+        self.agreement_today_button = QToolButton()
+        self.agreement_today_button.setText("Today’s Date")
+        self.agreement_today_button.setStyleSheet("QToolButton {color: blue; font-size: 14px;}")
+        self.agreement_today_button.setCursor(Qt.PointingHandCursor)
+        self.agreement_today_button.clicked.connect(self.set_today_date_in_agreement_date)
+        hlayout.addWidget(self.agreement_today_button)
 
-        # Set the alignment and size policy of the agreement date widget
-        self.agreement_date.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        # Adjusting size and alignment for Agreement Date label and date input
+        self.agreement_date_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.agreement_date_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.agreement_date.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.agreement_date.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Row 6
@@ -378,13 +447,23 @@ class BillEntry(BaseWindow):
         with open(self.config_file, 'w') as configfile:
             self.config.write(configfile)
 
+    # Functions to handle today date setting
+    def set_today_date_in_received_date(self):
+        """Set today’s date in the received_date field"""
+        self.received_date.setDate(QDate.currentDate())
+
+    def set_today_date_in_agreement_date(self):
+        """Set today’s date in the agreement_date field"""
+        self.agreement_date.setDate(QDate.currentDate())
+
     def toggle_agreement_date_input(self, state):
+        """Enable or disable the agreement date input based on the checkbox state."""
         if state == Qt.Checked:
             self.agreement_date.setDisabled(True)
-            self.agreement_date.clear()  # Clear any date that was inputted
+            self.agreement_date.clear()  # Clear the date if Date N/A is checked
+            self.agreement_date.setDate(QDate.currentDate())
         else:
             self.agreement_date.setDisabled(False)
-            self.agreement_date.setDate(QDate.currentDate())
 
     def filter_table(self):
         search_term = self.search_bar.text().lower()
@@ -429,7 +508,6 @@ class BillEntry(BaseWindow):
                     # Set tooltip for the "Name" column
                     # if column_name == "Tenant Name":  # Replace with your actual column name
                     item.setToolTip(str(data))
-
                 self.bill_entry_table.item(row_number, 0).setData(Qt.UserRole, tenant_id)
                 # Add 'Edit' and 'Delete' buttons
                 # self.add_table_buttons(row_number)
@@ -515,8 +593,8 @@ class BillEntry(BaseWindow):
         # Define column indices
         columns = {'RECEIVED_DATE': 0, 'HOUSE_NO': 1, 'ROOM_NO': 2, 'CTS_NO': 3, 'TENANT_NAME': 4, 'RENT_FROM': 5,
                    'RENT_TO': 6, 'AT_THE_RATE_OF': 7, 'TOTAL_MONTHS': 8, 'TOTAL_AMOUNT': 9, 'BOOK_NO': 10,
-                   'BILL_NO': 11,
-                   'EXTRA_PAYMENT': 12, 'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16, 'BILL_ID': 0}
+                   'BILL_NO': 11, 'EXTRA_PAYMENT': 12, 'PURPOSE_FOR': 13, 'AGREEMENT_DATE': 16,
+                   'BILL_ID': 0}
 
         # Fetch the data from the table row
         data = {
@@ -531,7 +609,8 @@ class BillEntry(BaseWindow):
 
     def set_data_to_form(self, data):
         # Fill the form fields with the data
-
+        print('data in set data to form', self.operation)
+        print(data)
         # Check if the key is present before accessing it
         if 'RECEIVED_DATE' in data:
             self.received_date.setDate(QDate.fromString(data['RECEIVED_DATE'], 'yyyy-MM-dd'))
@@ -582,10 +661,26 @@ class BillEntry(BaseWindow):
             self.house_number_combo.setCurrentText(data['HOUSE_NO'])
 
         if 'TENANT_NAME' in data:
-            self.tenant_name_combo.setCurrentText(data['TENANT_NAME'])
+            tenant_name = data['TENANT_NAME']
+            if tenant_name:
+                index = self.tenant_name_combo.findText(tenant_name)
+                if index != -1:
+                    self.tenant_name_combo.setCurrentIndex(index)
+                else:
+                    self.tenant_name_combo.addItem(tenant_name)
+                    self.tenant_name_combo.setCurrentIndex(self.tenant_name_combo.count() - 1)
+            # self.tenant_name_combo.setCurrentText(data['TENANT_NAME'])
 
         if 'ROOM_NO' in data:
-            self.room_number_combo.setCurrentText(data['ROOM_NO'])
+            room_no = data['ROOM_NO']
+            if room_no:
+                index = self.room_number_combo.findText(room_no)
+                if index != -1:
+                    self.room_number_combo.setCurrentIndex(index)
+                else:
+                    self.room_number_combo.addItem(room_no)
+                    self.room_number_combo.setCurrentIndex(self.room_number_combo.count() - 1)
+            # self.room_number_combo.setCurrentText(data['ROOM_NO'])
 
         if 'CTS_NO' in data:
             self.cts_number_line.setText(data['CTS_NO'])
@@ -600,11 +695,11 @@ class BillEntry(BaseWindow):
                 self.notes_text.setText(notes)
 
     def print_record(self, row):
+        self.operation = 'print'
         data = self.get_data_from_row(row.row())
         self.set_data_to_form(data)
         self.make_form_readonly()
         self.cts_number_line.setDisabled(True)
-        self.operation = 'print'
         self.setWindowTitle("Bill Entry - Print")
         self.print_button.setEnabled(True)
         self.delete_button.setEnabled(True)
@@ -759,15 +854,23 @@ class BillEntry(BaseWindow):
             self.house_number_combo.addItem(house_number, house_id)
 
     def house_changed(self):
+        if self.operation == 'print':
+            return
         current_house_id = self.house_number_combo.currentData()
+        print("current_house_id", current_house_id)
         rooms = database.get_rooms_data_by_house_id(current_house_id)
         self.tenant_name_combo.clear()
         for room in rooms:
             room_id = room[1]
+            print("room_id", room_id)
             tenant_name, tenant_id = database.get_tenants_data_by_room_id(room_id)
-            self.tenant_name_combo.addItem(tenant_name, tenant_id)
+            if tenant_name and tenant_id:
+                print("tenant_name, tenant_id", tenant_name, tenant_id)
+                self.tenant_name_combo.addItem(tenant_name, tenant_id)
 
     def tenant_changed(self):
+        if self.operation == 'print':
+            return
         current_tenant_id = self.tenant_name_combo.currentData()
         self.room_number_combo.clear()
         if current_tenant_id:

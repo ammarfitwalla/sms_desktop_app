@@ -59,9 +59,9 @@ class MasterEntry(BaseWindow):
         menubar.addMenu('Help')
 
         # Add 'Switch to Master' action under File menu
-        switch_to_master_action = QAction('Bill Entry', self)
-        switch_to_master_action.triggered.connect(self.switch_to_bill)
-        file_menu.addAction(switch_to_master_action)
+        switch_to_bill_action = QAction('Bill Entry', self)
+        switch_to_bill_action.triggered.connect(self.switch_to_bill)
+        file_menu.addAction(switch_to_bill_action)
 
         switch_to_reports_action = QAction('Reports', self)
         # switch_to_reports_action.triggered.connect(self.close)
@@ -93,6 +93,7 @@ class MasterEntry(BaseWindow):
         self.tenant_mobile_input = QLineEdit(self)
         self.tenant_dod_input = QDateEdit(self)
         self.tenant_dod_input.setDisplayFormat("dd-MM-yyyy")
+        self.tenant_dod_input.setCalendarPopup(True)
         self.tenant_dod_input.setDate(QDate.currentDate())
         self.is_alive_checkbox = QCheckBox("Is Alive", self)
         self.is_alive_checkbox.stateChanged.connect(self.toggle_dod_input)
@@ -104,6 +105,10 @@ class MasterEntry(BaseWindow):
         # --------------------------- SUBMIT BUTTON --------------------------- #
         self.submit_btn = QPushButton("Save", self)
         self.submit_btn.clicked.connect(self.handle_submission)
+
+        # --------------------------- SUBMIT BUTTON --------------------------- #
+        self.new_tenant_old_room_btn = QPushButton("Update (New Tenant - Old Room)", self)
+        self.new_tenant_old_room_btn.clicked.connect(self.on_new_tenant_old_room)
 
         # --------------------------- CLEAR FORM BUTTON --------------------------- #
         self.clear_form_btn = QPushButton("Clear Form", self)
@@ -144,6 +149,7 @@ class MasterEntry(BaseWindow):
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.submit_btn)
         button_layout.addWidget(self.clear_form_btn)
+        button_layout.addWidget(self.new_tenant_old_room_btn)
         # button_layout.addWidget(self.edit_btn)
         button_layout.addWidget(self.delete_btn)
         layout.addRow(button_layout)
@@ -310,6 +316,88 @@ class MasterEntry(BaseWindow):
         self.operation = "insert"  # Reset operation to insert after handling submission
         self.current_row = None
         self.setWindowTitle("Master Entry - Add")
+
+    def on_new_tenant_old_room(self):
+        if not self.validate_input():
+            return
+        # Show confirmation dialog
+        reply = QMessageBox.question(
+            self, "Confirm Update",
+            "Are you sure you want to update the new tenant over the old tenant for the old room?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            # Call the database update method
+            self.update_tenant_for_old_room()
+
+    def update_tenant_for_old_room(self):
+        # Collect tenant details from the UI
+        house_number = self.house_number_combo.currentText()
+        room_number = self.room_number_combo.currentText()
+        cts_number = self.cts_number_combo.currentText()
+        tenant_name = self.tenant_name_input.text()
+        tenant_mobile = self.tenant_mobile_input.text()
+        tenant_dod = None if self.is_alive_checkbox.isChecked() else self.tenant_dod_input.date().toString("yyyy-MM-dd")
+        notes = self.notes_input.text()
+
+        # Determine tenant gender based on selected radio button
+        if self.male_rb.isChecked():
+            tenant_gender = "M"
+        elif self.female_rb.isChecked():
+            tenant_gender = "F"
+        else:
+            tenant_gender = "O"
+
+        # Retrieve the old tenant ID based on house, CTS, and room number
+        old_tenant_id = database.get_tenant_id_by_house_cts_room_number(house_number, cts_number, room_number)
+
+        if old_tenant_id:
+            # Check if the old tenant's name matches the new tenant's name
+            old_tenant_name = database.get_tenant_name_by_tenant_id(old_tenant_id)
+            if old_tenant_name == tenant_name:
+                QMessageBox.critical(self, "Error", "Old Tenant Name is the same as the New Tenant Name!")
+                return
+
+            # Update old tenant's current status to False
+            status, message = database.update_current_tenant_status(old_tenant_id, 'False')
+            if not status:
+                QMessageBox.warning(self, "Error", str(message))
+            else:
+                # Update the new tenant details for the old room
+                status, message = database.update_new_tenant_to_old_room(
+                    house_number, cts_number, room_number, tenant_name,
+                    tenant_mobile, tenant_dod, notes, tenant_gender
+                )
+                if status:
+                    QMessageBox.information(self, "Success", str(message))
+                else:
+                    QMessageBox.warning(self, "Error", str(message))
+
+            self.clear_form()
+            self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
+            self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
+            self.refresh_combo_box(self.cts_number_combo, database.get_cts_numbers)
+
+        else:
+            # Insert new tenant details as a new entry if no old tenant is found
+            status, message = database.insert_master_entry(
+                house_number, cts_number, room_number, tenant_name,
+                tenant_mobile, tenant_dod, notes, tenant_gender
+            )
+            if status:
+                QMessageBox.information(self, "Success", "Data Inserted Successfully!")
+                self.clear_form()
+                self.refresh_combo_box(self.house_number_combo, database.get_house_numbers)
+                self.refresh_combo_box(self.room_number_combo, database.get_room_numbers)
+                self.refresh_combo_box(self.cts_number_combo, database.get_cts_numbers)
+            else:
+                QMessageBox.warning(self, "Error", str(message))
+
+            # Final notification to confirm the new tenant addition
+            QMessageBox.information(self, "Success", f"New tenant '{tenant_name}' added")
+
+        self.populate_table()
 
     def populate_table(self, search_term=''):
         master_entries = database.get_all_master_entries()
