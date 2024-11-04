@@ -578,7 +578,7 @@ class BillEntry(BaseWindow):
                       self.book_number_line, self.bill_number_line, self.extra_payment_line,
                       self.purpose_line, self.agreement_date, self.house_number_combo,
                       self.room_number_combo, self.cts_number_line, self.tenant_name_combo, self.notes_text,
-                      self.submit_button, self.is_alive_checkbox, self.agreement_today_button, self.today_button]:
+                      self.submit_button, self.is_alive_checkbox, self.today_button, self.agreement_today_button]:
             if isinstance(field, QComboBox):
                 field.setEnabled(True)
             elif isinstance(field, QDateEdit):
