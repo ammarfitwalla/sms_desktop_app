@@ -1,7 +1,6 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QMessageBox
-import database
+from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QMessageBox
+from db import database
 from PyQt5.QtWidgets import QDialog
-from base_class import BaseWindow
 from PyQt5.QtGui import QFont
 
 

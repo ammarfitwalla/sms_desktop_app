@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QApplication
-from login import LoginApp
-from master_entry import MasterEntry
-from bill import BillEntry
+from src.login import LoginApp
+from src.bill import BillEntry
 
 if __name__ == '__main__':
     app = QApplication([])

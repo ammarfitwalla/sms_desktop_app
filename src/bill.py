@@ -1,17 +1,16 @@
 import os
 import sys
 from datetime import datetime, date
-from PyQt5 import QtCore
 from PyQt5.QtCore import QDate, Qt, QSize
 from PyQt5.QtGui import QPainter, QImage, QFont, QIcon, QIntValidator
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QApplication, QLabel, QComboBox, QLineEdit, QDateEdit, QPushButton, \
     QGridLayout, QVBoxLayout, QTableWidget, QHBoxLayout, QMessageBox, QTableWidgetItem, QAction, \
-    QMenuBar, QCheckBox, QSizePolicy, QCalendarWidget, QToolButton, QWidget
-from utils import split_string, get_date_month_year, convert_date_string, check_dir
-import master_entry
-import database
-from base_class import BaseWindow
+    QMenuBar, QCheckBox, QSizePolicy, QToolButton
+from utils.utils import split_string, get_date_month_year, convert_date_string, check_dir
+from src import master_entry
+from db import database
+from src.base_class import BaseWindow
 import configparser
 
 
@@ -307,9 +306,9 @@ class BillEntry(BaseWindow):
         layout.addWidget(self.notes_text, 6, 1, 1, 5)
 
         self.script_directory = os.path.dirname(os.path.abspath(__file__))
-        self.pen_icon_path = os.path.join(self.script_directory, 'icons', 'pen_icon.png')
-        self.delete_icon_path = os.path.join(self.script_directory, 'icons', 'delete_icon1.png')
-        self.printer_icon_path = os.path.join(self.script_directory, 'icons', 'printer_icon.png')
+        self.pen_icon_path = os.path.join(self.script_directory, '../icons', 'pen_icon.png')
+        self.delete_icon_path = os.path.join(self.script_directory, '../icons', 'delete_icon1.png')
+        self.printer_icon_path = os.path.join(self.script_directory, '../icons', 'printer_icon.png')
 
         # Row 7
         buttons_layout = QHBoxLayout()
@@ -350,7 +349,7 @@ class BillEntry(BaseWindow):
 
         # Row 8
         self.script_directory = os.path.dirname(os.path.abspath(__file__))
-        self.rr_bill_path = os.path.join(self.script_directory, 'images', 'output_bill_blank_image.png')
+        self.rr_bill_path = os.path.join(self.script_directory, '../images', 'output_bill_blank_image.png')
         # self.rr_bill_path = os.path.join(self.script_directory, 'images', 'rr_bill.jpg')
 
         self.search_bar = QLineEdit(self)

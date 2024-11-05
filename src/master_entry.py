@@ -5,12 +5,12 @@ from PyQt5.QtWidgets import (QVBoxLayout, QMenuBar, QAction,
                              QFormLayout, QLabel, QLineEdit, QDateEdit, QCheckBox,
                              QPushButton, QRadioButton, QGridLayout, QHBoxLayout,
                              QTableWidget, QComboBox, QCompleter, QMessageBox, QTableWidgetItem, QApplication)
-import database
+from db import database
 from datetime import date
 from PyQt5.QtCore import Qt, QDate
-from base_class import BaseWindow
-from utils import check_dir
-import bill
+from src.base_class import BaseWindow
+from utils.utils import check_dir
+from src import bill
 
 
 class MasterEntry(BaseWindow):
@@ -124,8 +124,8 @@ class MasterEntry(BaseWindow):
 
         # --------------------------- ICONS PATH --------------------------- #
         self.script_directory = os.path.dirname(os.path.abspath(__file__))
-        self.pen_icon_path = os.path.join(self.script_directory, 'icons', 'pen_icon.png')
-        self.delete_icon_path = os.path.join(self.script_directory, 'icons', 'delete_icon1.png')
+        self.pen_icon_path = os.path.join(self.script_directory, '../icons', 'pen_icon.png')
+        self.delete_icon_path = os.path.join(self.script_directory, '../icons', 'delete_icon1.png')
 
         self.search_bar = QLineEdit(self)
         self.search_bar.setPlaceholderText("Search...")
