@@ -108,6 +108,7 @@ class MasterEntry(BaseWindow):
 
         # --------------------------- SUBMIT BUTTON --------------------------- #
         self.new_tenant_old_room_btn = QPushButton("Update (New Tenant - Old Room)", self)
+        self.new_tenant_old_room_btn.setStyleSheet("color: red;")  # Set text color to red
         self.new_tenant_old_room_btn.clicked.connect(self.on_new_tenant_old_room)
 
         # --------------------------- CLEAR FORM BUTTON --------------------------- #
@@ -178,9 +179,9 @@ class MasterEntry(BaseWindow):
             "QHeaderView::section {border: 0.5px solid rgb(192, 192, 192);}")
 
         self.config = configparser.ConfigParser()
-        self.base_folder = 'sms_data'
-        check_dir(self.base_folder)
-        self.config_file = os.path.join(self.base_folder, 'config.ini')
+        # self.base_folder = 'sms_data'
+        # check_dir(self.base_folder)
+        self.config_file = 'config.ini'
         self.load_config()
         self.adjust_columns()
         self.master_entry_table.horizontalHeader().sectionResized.connect(self.column_resized)

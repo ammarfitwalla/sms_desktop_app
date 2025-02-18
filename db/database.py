@@ -4,19 +4,20 @@ import mysql.connector
 
 config = configparser.ConfigParser()
 
-base_folder = 'sms_data'
-config_file = os.path.join(base_folder, 'config.ini')
+config_file = os.path.join(os.getcwd(), 'src', 'config.ini')
 config.read(config_file)
 
 
 def create_connection():
-    connection = mysql.connector.connect(
-        host=config['DatabaseCredentials']['host'],
-        user=config['DatabaseCredentials']['user'],
-        password=config['DatabaseCredentials']['password'],
-        database=config['DatabaseCredentials']['database'])
-
-    return connection
+    try:
+        connection = mysql.connector.connect(
+            host=config['DatabaseCredentials']['host'],
+            user=config['DatabaseCredentials']['user'],
+            password=config['DatabaseCredentials']['password'],
+            database=config['DatabaseCredentials']['database'])
+        return connection
+    except:
+        return
 
 
 def check_credentials(username, password):
@@ -26,7 +27,6 @@ def check_credentials(username, password):
     query = "SELECT * FROM users WHERE username=%s AND password=%s"
     cursor.execute(query, (username, password))
     result = cursor.fetchall()
-
     connection.close()
     return len(result) > 0
 
@@ -535,7 +535,7 @@ def get_house_data():
     cursor = connection.cursor()
 
     query = """
-        SELECT
+        SELECT DISTINCT
         h.house_number,
         h.house_id
         FROM Tenants t
@@ -790,14 +790,14 @@ def get_all_bill_entries():
             h.house_number AS "House No.",
             r.room_number AS "Room No.",
             c.cts_number AS "CTS No.",
+            b.book_number AS "Book No.",
+            b.bill_number AS "Bill No.",
             t.tenant_name AS "Tenant Name",
             b.rent_from AS "Rent From",
             b.rent_to AS "Rent To",
             b.at_the_rate_of AS "@",
             b.total_months AS "Total Month(s)",
             b.total_rupees AS "Total Amount",
-            b.book_number AS "Book No.",
-            b.bill_number AS "Bill No.",
             b.extra_payment AS "Extra Payment",
             b.purpose_for AS "Purpose For",
             t.tenant_mobile AS "Mobile",

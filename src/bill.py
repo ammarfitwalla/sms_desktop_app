@@ -364,9 +364,10 @@ class BillEntry(BaseWindow):
 
         self.bill_entry_table = QTableWidget(self)
 
-        self.bill_table_columns = ["Received Date", "House No.", "Room No.", "CTS No.", "Name",
-                                   "Rent From", "Rent To", "@", "Total Months", "Total Amount",
-                                   "Book No.", "Bill No.", "Extra Payment", "Purpose For",
+        self.bill_table_columns = ["Received Date", "House No.", "Room No.", "CTS No.",
+                                   "Book No.", "Bill No.", "Name", "Rent From", "Rent To",
+                                   "@", "Total Months", "Total Amount",
+                                   "Extra Payment", "Purpose For",
                                    "Mobile", "DoD", "Agreement Date", "Notes", "Gender"]
         #
         # self.bill_table_columns = ["Received\nDate", "House\nNo.", "Room\nNo.", "CTS\nNo.", "Name",
@@ -399,9 +400,9 @@ class BillEntry(BaseWindow):
         self.bill_entry_table.itemClicked.connect(self.print_record)
 
         self.config = configparser.ConfigParser()
-        self.base_folder = 'sms_data'
-        check_dir(self.base_folder)
-        self.config_file = os.path.join(self.base_folder, 'config.ini')
+        # self.base_folder = 'src'
+        # check_dir(self.base_folder)
+        self.config_file = 'config.ini'
         self.load_config()
         self.adjust_columns()
         self.bill_entry_table.horizontalHeader().sectionResized.connect(self.column_resized)
@@ -522,34 +523,34 @@ class BillEntry(BaseWindow):
             # self.bill_entry_table.setColumnWidth(13, 80)
             # self.bill_entry_table.setColumnWidth(17, 100)
 
-    def add_table_buttons(self, row):
-        btn_edit = QPushButton(self)
-        btn_edit.clicked.connect(lambda: self.edit_record(row))
-        btn_edit.setIcon(QIcon(self.pen_icon_path))
-        btn_edit.setIconSize(QSize(20, 20))
-        self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 3, btn_edit)
-        btn_edit.setFixedWidth(50)
-
-        # Print button
-        btn_print = QPushButton(self)
-        btn_print.clicked.connect(lambda: self.print_record(row))
-        btn_print.setIcon(QIcon(self.printer_icon_path))
-        btn_print.setIconSize(QSize(40, 40))
-        self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 2, btn_print)
-        btn_print.setFixedWidth(50)
-
-        # Delete button
-        btn_delete = QPushButton(self)
-        btn_delete.clicked.connect(lambda: self.delete_record(row))
-        btn_delete.setIcon(QIcon(self.delete_icon_path))
-        btn_delete.setIconSize(QSize(30, 30))
-        self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 1, btn_delete)
-        btn_delete.setFixedWidth(50)
-
-        button_columns = [len(self.bill_table_columns) - 3, len(self.bill_table_columns) - 2,
-                          len(self.bill_table_columns) - 1]
-        for col in button_columns:
-            self.bill_entry_table.setColumnWidth(col, 50)
+    # def add_table_buttons(self, row):
+    #     btn_edit = QPushButton(self)
+    #     btn_edit.clicked.connect(lambda: self.edit_record(row))
+    #     btn_edit.setIcon(QIcon(self.pen_icon_path))
+    #     btn_edit.setIconSize(QSize(20, 20))
+    #     self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 3, btn_edit)
+    #     btn_edit.setFixedWidth(50)
+    #
+    #     # Print button
+    #     btn_print = QPushButton(self)
+    #     btn_print.clicked.connect(lambda: self.print_record(row))
+    #     btn_print.setIcon(QIcon(self.printer_icon_path))
+    #     btn_print.setIconSize(QSize(40, 40))
+    #     self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 2, btn_print)
+    #     btn_print.setFixedWidth(50)
+    #
+    #     # Delete button
+    #     btn_delete = QPushButton(self)
+    #     btn_delete.clicked.connect(lambda: self.delete_record(row))
+    #     btn_delete.setIcon(QIcon(self.delete_icon_path))
+    #     btn_delete.setIconSize(QSize(30, 30))
+    #     self.bill_entry_table.setCellWidget(row, len(self.bill_table_columns) - 1, btn_delete)
+    #     btn_delete.setFixedWidth(50)
+    #
+    #     button_columns = [len(self.bill_table_columns) - 3, len(self.bill_table_columns) - 2,
+    #                       len(self.bill_table_columns) - 1]
+    #     for col in button_columns:
+    #         self.bill_entry_table.setColumnWidth(col, 50)
 
     def make_form_readonly(self):
         # Iterate over all the form fields to set them to read-only
@@ -661,6 +662,16 @@ class BillEntry(BaseWindow):
         if 'HOUSE_NO' in data:
             self.house_number_combo.setCurrentText(data['HOUSE_NO'])
 
+        if 'HOUSE_NO' in data:
+            house_number = data['HOUSE_NO']
+            if house_number:
+                index = self.house_number_combo.findText(house_number)
+                if index != -1:
+                    self.house_number_combo.setCurrentIndex(index)
+                else:
+                    self.house_number_combo.addItem(house_number)
+                    self.house_number_combo.setCurrentIndex(self.house_number_combo.count() - 1)
+
         if 'TENANT_NAME' in data:
             tenant_name = data['TENANT_NAME']
             if tenant_name:
@@ -758,9 +769,15 @@ class BillEntry(BaseWindow):
         self.edit_button.setDisabled(True)
         self.delete_button.setDisabled(True)
         # self.rent_to_date.setReadOnly(True)
+        # self.house_number_combo.clear()
+        # self.tenant_name_combo.clear()
+        # self.room_number_combo.clear()
         self.house_number_combo.setCurrentIndex(0)
-        self.tenant_name_combo.setCurrentIndex(0)
-        self.room_number_combo.setCurrentIndex(0)
+        self.tenant_name_combo.clear()
+        self.room_number_combo.clear()
+        # self.tenant_name_combo.setCurrentIndex(0)
+        # self.room_number_combo.setCurrentIndex(0)
+        self.cts_number_line.setReadOnly(True)
 
         # Clear line edits
         self.book_number_line.clear()
@@ -1045,6 +1062,16 @@ class BillEntry(BaseWindow):
         return True
 
     def print_data(self):
+        reply = QMessageBox.question(
+            self,
+            "Confirm Print",
+            "Do you want to proceed with printing the bill?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.No:
+            return  # Exit the function if the user chooses "No"
         tenant_name = database.get_tenant_name_by_bill_id(self.bill_id)
         tenant_name_first_set, tenant_name_second_set = split_string(tenant_name, 45)
         received_date_with_ordinal, received_month, received_year = get_date_month_year(

@@ -43,7 +43,6 @@ class LoginApp(QDialog):
     def handle_login(self):
         username = self.username_input.text()
         password = self.password_input.text()
-
         if database.check_credentials(username, password):
             self.accept()  # Close the login window upon successful login
         else:
